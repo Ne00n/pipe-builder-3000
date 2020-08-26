@@ -9,3 +9,8 @@
     name: wireguard
     update_cache: yes
   when: ansible_distribution == 'Debian'
+
+- name: Wireguard kernel module
+  modprobe:
+    name: wireguard
+    state: present
