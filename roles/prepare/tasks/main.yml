@@ -1,0 +1,11 @@
+- name: Wireguard repository
+  apt_repository:
+    repo: deb http://deb.debian.org/debian buster-backports main contrib non-free
+    state: present
+  when: ansible_distribution == 'Debian'
+
+- name: Wireguard installation
+  apt:
+    name: wireguard
+    update_cache: yes
+  when: ansible_distribution == 'Debian'
