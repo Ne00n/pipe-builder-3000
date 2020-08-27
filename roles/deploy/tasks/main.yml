@@ -1,4 +1,0 @@
-- name: Wireguard kernel module
-  modprobe:
-    name: wireguard
-    state: present

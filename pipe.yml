@@ -1,6 +1,0 @@
----
-
-- hosts: pipe
-  roles:
-    - prepare
-    - deploy
