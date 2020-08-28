@@ -1,0 +1,4 @@
+{
+ "Server1":{"Targets":["Server3","Server2"]},
+ "Server2":{"Targets":["Server3"}
+}
