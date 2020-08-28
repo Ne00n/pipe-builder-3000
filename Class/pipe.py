@@ -28,7 +28,7 @@ class Pipe:
             parsed = re.findall("^[A-Za-z]+",configs, re.MULTILINE)
             #Disable old configs
             for config in parsed:
-                self.cmd(server,'systemctl stop wg-quick@'+config+' && systemctl disable wg-quick@w'+config,False)
+                self.cmd(server,'systemctl stop wg-quick@'+config+' && systemctl disable wg-quick@'+config,False)
 
     def run(self):
         global targets
@@ -56,9 +56,10 @@ class Pipe:
                 print('Creating',server,'on',client)
                 self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+server+".conf",False)
                 #Enable Server
-                self.cmd(server,'systemctl enable wg-quick@w'+client+' && systemctl start wg-quick@'+client,False)
+                self.cmd(server,'systemctl enable wg-quick@'+client+' && systemctl start wg-quick@'+client,False)
                 #Enable Client
-                self.cmd(client,'systemctl enable wg-quick@w'+server+' && systemctl start wg-quick@'+server,False)
+                self.cmd(client,'systemctl enable wg-quick@'+server+' && systemctl start wg-quick@'+server,False)
+                print('Done',client,'on',server)
                 start +=2
                 port +=1
             subnet +=1
