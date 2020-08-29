@@ -55,7 +55,6 @@ class Pipe:
                 #Put Server config
                 print('Creating',client,'on',server)
                 self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+client+".conf",False)
-                print(serverConfig)
                 #Resolve hostname
                 ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
                 #Generate Client config
