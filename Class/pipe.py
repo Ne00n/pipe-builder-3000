@@ -25,10 +25,13 @@ class Pipe:
             #Remove current configs
             #self.cmd(data['IP'],'rm /etc/wireguard/*',False)
             #Parse configs
-            parsed = re.findall("^[A-Za-z]+",configs, re.MULTILINE)
+            parsed = re.findall("^[A-Za-z0-9]+",configs, re.MULTILINE)
             #Disable old configs
-            for config in parsed:
-                self.cmd(server,'systemctl stop wg-quick@'+config+' && systemctl disable wg-quick@'+config,False)
+            for client in parsed:
+                #Stop Server
+                self.cmd(server,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                #Stop Client
+                self.cmd(client,'systemctl stop wg-quick@'+server+' && systemctl disable wg-quick@'+server,False)
 
     def run(self):
         global targets
@@ -48,14 +51,15 @@ class Pipe:
                 #Generate Client public key
                 publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
                 #Generate Server config
-                serverConfig = T.genServer(subnet,start,port,privateServer,publicClient)
+                serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
                 #Put Server config
                 print('Creating',client,'on',server)
                 self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+client+".conf",False)
+                print(serverConfig)
                 #Resolve hostname
                 ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
                 #Generate Client config
-                clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient,publicServer)
+                clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip())
                 #Put Client config
                 print('Creating',server,'on',client)
                 self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+server+".conf",False)
