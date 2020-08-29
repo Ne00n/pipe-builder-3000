@@ -20,9 +20,9 @@ class Pipe:
     def prepare(self):
         print("Preparing")
         for server,data in targets.items():
-            #Fetch current configs
+            #Fetch old configs
             configs = self.cmd(server,'ls /etc/wireguard/',True)
-            #Remove current configs
+            #Remove old configs
             #self.cmd(data['IP'],'rm /etc/wireguard/*',False)
             #Parse configs
             parsed = re.findall("^[A-Za-z0-9]+",configs, re.MULTILINE)
