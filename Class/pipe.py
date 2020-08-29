@@ -38,20 +38,24 @@ class Pipe:
         print("Launching")
         for server,data in targets.items():
             print('---',server,'---')
-            #Generate private key
-            privateKey = self.cmd(server,'wg genkey',True)
-            #Generate public key
-            publicKey = self.cmd(server,'echo "'+privateKey+'" | wg pubkey',True)
+            #Generate Server private key
+            privateServer = self.cmd(server,'wg genkey',True)
+            #Generate Server public key
+            publicServer = self.cmd(server,'echo "'+privateServer+'" | wg pubkey',True)
             for client in data['Targets']:
+                #Generate Client private key
+                privateClient = self.cmd(client,'wg genkey',True)
+                #Generate Client public key
+                publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
                 #Generate Server config
-                serverConfig = T.genServer(subnet,start,port,privateKey,publicKey)
+                serverConfig = T.genServer(subnet,start,port,privateServer,publicClient)
                 #Put Server config
                 print('Creating',client,'on',server)
                 self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+client+".conf",False)
                 #Resolve hostname
                 ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
                 #Generate Client config
-                clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateKey,publicKey)
+                clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient,publicServer)
                 #Put Client config
                 print('Creating',server,'on',client)
                 self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+server+".conf",False)
