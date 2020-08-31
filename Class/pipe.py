@@ -35,7 +35,7 @@ class Pipe:
 
     def run(self):
         global targets
-        subnet,start,port = 1,1,51194
+        subnet,start,port = 1,0,51194
         self.prepare()
         T = Templator()
         print("Launching")
