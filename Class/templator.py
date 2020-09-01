@@ -1,5 +1,23 @@
 class Templator:
     def genServer(self,subnet,server,port,privateKey,publicKey):
-        return '[Interface]\nAddress = 10.0.'+str(subnet)+'.'+str(server)+'/31\nListenPort = '+str(port)+'\nPrivateKey = '+str(privateKey)+'\nSaveConfig = true\n[Peer]\nPublicKey = '+publicKey+'\nAllowedIPs = 10.0.'+str(subnet)+'.'+str(server+1)+'/32'
+        template = '''[Interface]
+        Address = 10.0.'''+str(subnet)+'''.'''+str(server)+'''/31
+        ListenPort = '''+str(port)+'''
+        PrivateKey = '''+str(privateKey)+'''
+        SaveConfig = true
+        Table = off
+        [Peer]
+        PublicKey = '''+publicKey+'''
+        AllowedIPs = 10.0.0.0/8'''
+        return template
     def genClient(self,ip,subnet,server,port,privateKey,publicKey):
-        return '[Interface]\nPrivateKey = '+str(privateKey)+'\nAddress = 10.0.'+str(subnet)+'.'+str(server+1)+'/32\n[Peer]\nPublicKey = '+str(publicKey)+'\nAllowedIPs = 10.0.'+str(subnet)+'.0/24\nEndpoint = '+str(ip)+':'+str(port)+'\nPersistentKeepalive = 20'
+        template = '''[Interface]
+        PrivateKey = '''+str(privateKey)+'''
+        Address = 10.0.'''+str(subnet)+'''.'''+str(server+1)+'''/31
+        Table = off
+        [Peer]
+        PublicKey = '''+str(publicKey)+'''
+        AllowedIPs = 10.0.0.0/8
+        Endpoint = '''+str(ip)+''':'''+str(port)+'''
+        PersistentKeepalive = 20'''
+        return template
