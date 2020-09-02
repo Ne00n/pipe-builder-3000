@@ -4,6 +4,7 @@ class Templator:
         Address = 10.0.'''+str(subnet)+'''.'''+str(server)+'''/31
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)+'''
+        PostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward;
         SaveConfig = true
         Table = off
         [Peer]
@@ -12,8 +13,9 @@ class Templator:
         return template
     def genClient(self,ip,subnet,server,port,privateKey,publicKey):
         template = '''[Interface]
-        PrivateKey = '''+str(privateKey)+'''
         Address = 10.0.'''+str(subnet)+'''.'''+str(server+1)+'''/31
+        PrivateKey = '''+str(privateKey)+'''
+        PostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward;
         Table = off
         [Peer]
         PublicKey = '''+str(publicKey)+'''
