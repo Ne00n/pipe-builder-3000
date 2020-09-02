@@ -13,4 +13,4 @@ apt-get install wireguard
 Rename hosts.example.json to hosts.json and fill it up
 
 **Usage**<br />
-python3 bird.py
+python3 pipe.py
