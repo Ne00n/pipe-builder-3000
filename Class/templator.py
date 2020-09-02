@@ -3,8 +3,11 @@ class Templator:
         template = '''[Interface]
         Address = 10.0.'''+str(subnet)+'''.'''+str(server)+'''/31
         ListenPort = '''+str(port)+'''
-        PrivateKey = '''+str(privateKey)+'''
-        PostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward;
+        PrivateKey = '''+str(privateKey)
+        if port == 51194:
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/32 dev lo;'
+            template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/32 dev lo;'
+        template += '''
         SaveConfig = true
         Table = off
         [Peer]
