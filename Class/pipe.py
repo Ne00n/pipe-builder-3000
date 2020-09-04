@@ -36,11 +36,34 @@ class Pipe:
                 print("Stopping",client,"on",server.replace("pipe",""))
                 self.cmd(client.replace("pipe","") ,'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
 
+    def execute(self,subnet,start,port,client,server,privateServer,publicServer):
+        T = Templator()
+        #Generate Client private key
+        privateClient = self.cmd(client,'wg genkey',True)
+        #Generate Client public key
+        publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
+        #Generate Server config
+        serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
+        #Put Server config
+        print('Creating',client,'on',server)
+        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+".conf",False)
+        #Resolve hostname
+        ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
+        #Generate Client config
+        clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip())
+        #Put Client config
+        print('Creating',server,'on',client)
+        self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+".conf",False)
+        #Enable Server
+        self.cmd(server,'systemctl enable wg-quick@pipe'+client+' && systemctl start wg-quick@pipe'+client,False)
+        #Enable Client
+        self.cmd(client,'systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
+        print('Done',client,'on',server)
+
     def run(self):
         global targets
         subnet,start,port = 1,2,51194
         self.prepare()
-        T = Templator()
         print("Launching")
         time.sleep(3)
         for server,data in targets.items():
@@ -50,27 +73,7 @@ class Pipe:
             #Generate Server public key
             publicServer = self.cmd(server,'echo "'+privateServer+'" | wg pubkey',True)
             for client in data['Targets']:
-                #Generate Client private key
-                privateClient = self.cmd(client,'wg genkey',True)
-                #Generate Client public key
-                publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
-                #Generate Server config
-                serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
-                #Put Server config
-                print('Creating',client,'on',server)
-                self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+".conf",False)
-                #Resolve hostname
-                ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
-                #Generate Client config
-                clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip())
-                #Put Client config
-                print('Creating',server,'on',client)
-                self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+".conf",False)
-                #Enable Server
-                self.cmd(server,'systemctl enable wg-quick@pipe'+client+' && systemctl start wg-quick@pipe'+client,False)
-                #Enable Client
-                self.cmd(client,'systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
-                print('Done',client,'on',server)
+                self.execute(subnet,start,port,client,server,privateServer,publicServer)
                 start +=2
                 port +=1
             #Reset port and increase subnet
