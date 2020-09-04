@@ -9,6 +9,11 @@ Its recommended to run this on clean servers.
 **Dependencies**<br />
 apt-get install wireguard
 
+Debian 10:<br />
+sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"</br>
+apt-get update </br>
+apt-get install wireguard -y</br>
+
 **Prepare**<br />
 Rename hosts.example.json to hosts.json and fill it up<br />
 You can use * if you want to cross-connect to everything else
