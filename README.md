@@ -10,7 +10,8 @@ Its recommended to run this on clean servers.
 apt-get install wireguard
 
 **Prepare**<br />
-Rename hosts.example.json to hosts.json and fill it up
+Rename hosts.example.json to hosts.json and fill it up<br />
+You can use * if you want to cross-connect to everything else
 
 **Usage**<br />
 python3 pipe.py

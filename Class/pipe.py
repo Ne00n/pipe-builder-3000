@@ -63,6 +63,7 @@ class Pipe:
     def run(self):
         global targets
         subnet,start,port = 1,2,51194
+        crossConnect = []
         self.prepare()
         print("Launching")
         time.sleep(3)
@@ -73,9 +74,19 @@ class Pipe:
             #Generate Server public key
             publicServer = self.cmd(server,'echo "'+privateServer+'" | wg pubkey',True)
             for client in data['Targets']:
-                self.execute(subnet,start,port,client,server,privateServer,publicServer)
-                start +=2
-                port +=1
+                if client == "*":
+                    crossConnect.append(server)
+                    print("cross-connect™")
+                    for target in targets:
+                        #Prevent double connections
+                        if target not in crossConnect:
+                            self.execute(subnet,start,port,target,server,privateServer,publicServer)
+                            start +=2
+                            port +=1
+                else:
+                    self.execute(subnet,start,port,client,server,privateServer,publicServer)
+                    start +=2
+                    port +=1
             #Reset port and increase subnet
             port = 51194
             start = 2
