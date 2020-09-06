@@ -4,7 +4,8 @@ Sets up multiple point to point wireguard connections<br />
 Make sure the Hostnames are present in /etc/hosts<br />
 Wireguard needs to be already installed on all servers<br />
 
-Its recommended to run this on clean servers.
+Its recommended to run this on clean servers.<br />
+By default 10.0.x.x/8 is used.
 
 **Dependencies**<br />
 apt-get install wireguard
