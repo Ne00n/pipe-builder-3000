@@ -17,24 +17,38 @@ class Pipe:
         else:
             subprocess.run(cmd)
 
+    def checkCache(self,cache,server,client):
+        if server not in cache:
+            cache[server] = ()
+        for link in cache[server]:
+            if link == client:
+                return False
+        tmp = cache[server]
+        tmp += (client,)
+        cache[server] = tmp
+        return True
+
     def prepare(self):
+        cache = {}
         print("Preparing")
         for server,data in targets.items():
             #Fetch old configs
             configs = self.cmd(server,'ls /etc/wireguard/',True)
-            #Remove old configs
-            #self.cmd(data['IP'],'rm /etc/wireguard/*',False)
             #Parse configs
             parsed = re.findall("^pipe[A-Za-z0-9]+",configs, re.MULTILINE)
             #Disable old configs
             print("---",server,"---")
             for client in parsed:
-                #Stop Server
-                print("Stopping","pipe"+server,"on",client.replace("pipe",""))
-                self.cmd(server.replace("pipe",""),'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
-                #Stop Client
-                print("Stopping",client,"on",server.replace("pipe",""))
-                self.cmd(client.replace("pipe","") ,'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
+                status = self.checkCache(cache,server,client)
+                if status:
+                    #Stop Server
+                    print("Stopping","pipe"+server,"on",client.replace("pipe",""))
+                    self.cmd(server.replace("pipe",""),'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                status = self.checkCache(cache,client.replace("pipe",""),"pipe"+server)
+                if status:
+                    #Stop Client
+                    print("Stopping",client,"on",server.replace("pipe",""))
+                    self.cmd(client.replace("pipe","") ,'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
 
     def execute(self,subnet,start,port,client,server,privateServer,publicServer):
         T = Templator()
