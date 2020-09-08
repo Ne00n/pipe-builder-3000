@@ -10,10 +10,10 @@ By default 10.0.x.x/8 is used.
 **Dependencies**<br />
 apt-get install wireguard
 
-Debian 10:<br />
+**Debian 10**<br />
 ```
-sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"</br>
-apt-get update </br>
+sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"
+apt-get update
 apt-get install wireguard -y
 ```
 
