@@ -21,7 +21,7 @@ apt-get install wireguard -y
 Rename hosts.example.json to hosts.json and fill it up<br />
 You can use * if you want to cross-connect to everything else
 
-Examples:<br />
+**Examples**<br />
 
 point-to-point<br />
 ```
