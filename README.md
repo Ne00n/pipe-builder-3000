@@ -14,7 +14,7 @@ Debian 10:<br />
 ```
 sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"</br>
 apt-get update </br>
-apt-get install wireguard -y</br>
+apt-get install wireguard -y
 ```
 
 **Prepare**<br />
