@@ -7,6 +7,11 @@ Wireguard needs to be already installed on all servers<br />
 Its recommended to run this on clean servers.<br />
 By default 10.0.x.x/8 is used.
 
+This script configures only the wireguard connections, to make everything reachable (mesh) there is an addon:<br />
+https://github.com/Ne00n/bird-spawner-3000
+
+Which uses bird2 that dynamically creates routes and reroutes traffic if a node goes down.<br />
+
 **ToDo**<br />
 - IPv4 + IPv6 simultaneously
 
@@ -16,8 +21,7 @@ apt-get install wireguard
 **Debian 10**<br />
 ```
 sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"
-apt-get update
-apt-get install wireguard -y
+apt-get update && apt-get install wireguard -y
 ```
 
 **Prepare**<br />
