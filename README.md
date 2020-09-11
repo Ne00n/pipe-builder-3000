@@ -16,7 +16,7 @@ Which uses bird2 that dynamically creates routes and reroutes traffic if a node 
 - IPv4 + IPv6 simultaneously
 
 **Dependencies**<br />
-apt-get install wireguard
+wireguard, python3
 
 **Debian 10**<br />
 ```
