@@ -22,7 +22,7 @@ apt-get install wireguard -y
 
 **Prepare**<br />
 Rename hosts.example.json to hosts.json and fill it up<br />
-You can use * if you want to cross-connect to everything else<br /><br />
+You can use * if you want to cross-connect to everything else<br />
 
 If you updated pipe-builder you may run pipe.py clean since we renamed the Server files on 0.3<br />
 
@@ -57,13 +57,13 @@ cross-connect + point-to-point<br />
 **Usage**<br />
 Builds or Updates the network<br />
 ```
-python3 pipe.py build<br />
+python3 pipe.py build
 ```
 Shutdown all Wireguard pipe* connections<br />
 ```
-python3 pipe.py shutdown<br />
+python3 pipe.py shutdown
 ```
 Removes all Wireguard pipe* configuration files<br />
 ```
-python3 pipe.py clean<br />
+python3 pipe.py clean
 ```
