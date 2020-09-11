@@ -28,13 +28,13 @@ class Pipe:
             #Only shutdown connections the server is in charge
             if client.endswith("Server") and Filter == True or Filter == False:
                 #Stop Server
-                print("Stopping","pipe"+server,"on",client.replace("pipe","").replace("Server",""))
+                print("Stopping",client.replace("Server",""),"on",server)
                 self.cmd(server,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
                 if delete == True:
                     self.cmd(server,'rm -f /etc/wireguard/'+client+".conf",False)
                 #Stop Client
                 client = client.replace("pipe","").replace("Server","")
-                print("Stopping",client,"on",server)
+                print("Stopping","pipe"+server,"on",client)
                 self.cmd(client.replace("pipe",""),'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
                 if delete == True:
                     self.cmd(client.replace("pipe",""),'rm -f /etc/wireguard/pipe'+server+".conf",False)
@@ -68,8 +68,10 @@ class Pipe:
         print('Creating',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+".conf",False)
         #Enable Server
+        print('Starting',client,'on',server)
         self.cmd(server,'systemctl enable wg-quick@pipe'+client+'Server && systemctl start wg-quick@pipe'+client+'Server',False)
         #Enable Client
+        print('Starting',server,'on',client)
         self.cmd(client,'systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
         print('Done',client,'on',server)
 
