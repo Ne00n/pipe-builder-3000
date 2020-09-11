@@ -17,38 +17,37 @@ class Pipe:
         else:
             subprocess.run(cmd)
 
-    def checkCache(self,cache,server,client):
-        if server not in cache:
-            cache[server] = ()
-        for link in cache[server]:
-            if link == client:
-                return False
-        tmp = cache[server]
-        tmp += (client,)
-        cache[server] = tmp
-        return True
+    def prepare(self,server,Filter=True,delete=False):
+        print("---",server,"Preparing","---")
+        #Fetch old configs
+        configs = self.cmd(server,'ls /etc/wireguard/',True)
+        #Parse configs
+        parsed = re.findall("^pipe[A-Za-z0-9]+",configs, re.MULTILINE)
+        #Disable old configs
+        for client in parsed:
+            #Only shutdown connections the server is in charge
+            if client.endswith("Server") and Filter == True or Filter == False:
+                #Stop Server
+                print("Stopping","pipe"+server,"on",client.replace("pipe","").replace("Server",""))
+                self.cmd(server,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                if delete == True:
+                    self.cmd(server,'rm -f /etc/wireguard/'+client+".conf",False)
+                #Stop Client
+                client = client.replace("pipe","").replace("Server","")
+                print("Stopping",client,"on",server)
+                self.cmd(client.replace("pipe",""),'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
+                if delete == True:
+                    self.cmd(client.replace("pipe",""),'rm -f /etc/wireguard/pipe'+server+".conf",False)
 
-    def prepare(self):
-        cache = {}
-        print("Preparing")
+    def clean(self):
+        global targets
         for server,data in targets.items():
-            #Fetch old configs
-            configs = self.cmd(server,'ls /etc/wireguard/',True)
-            #Parse configs
-            parsed = re.findall("^pipe[A-Za-z0-9]+",configs, re.MULTILINE)
-            #Disable old configs
-            print("---",server,"---")
-            for client in parsed:
-                status = self.checkCache(cache,server,client)
-                if status:
-                    #Stop Server
-                    print("Stopping","pipe"+server,"on",client.replace("pipe",""))
-                    self.cmd(server.replace("pipe",""),'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
-                status = self.checkCache(cache,client.replace("pipe",""),"pipe"+server)
-                if status:
-                    #Stop Client
-                    print("Stopping",client,"on",server.replace("pipe",""))
-                    self.cmd(client.replace("pipe","") ,'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
+            self.prepare(server,False,True)
+
+    def shutdown(self):
+        global targets
+        for server,data in targets.items():
+            self.prepare(server,False)
 
     def execute(self,subnet,start,port,client,server,privateServer,publicServer):
         T = Templator()
@@ -60,7 +59,7 @@ class Pipe:
         serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
         #Put Server config
         print('Creating',client,'on',server)
-        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+".conf",False)
+        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+"Server.conf",False)
         #Resolve hostname
         ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
         #Generate Client config
@@ -69,7 +68,7 @@ class Pipe:
         print('Creating',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+".conf",False)
         #Enable Server
-        self.cmd(server,'systemctl enable wg-quick@pipe'+client+' && systemctl start wg-quick@pipe'+client,False)
+        self.cmd(server,'systemctl enable wg-quick@pipe'+client+'Server && systemctl start wg-quick@pipe'+client+'Server',False)
         #Enable Client
         self.cmd(client,'systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
         print('Done',client,'on',server)
@@ -78,11 +77,12 @@ class Pipe:
         global targets
         subnet,start,port = 1,2,51194
         crossConnect = []
-        self.prepare()
         print("Launching")
         time.sleep(3)
         for server,data in targets.items():
-            print('---',server,'---')
+            #Prepare
+            self.prepare(server)
+            print("---",server,"Deploying","---")
             #Generate Server private key
             privateServer = self.cmd(server,'wg genkey',True)
             #Generate Server public key

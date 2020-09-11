@@ -7,6 +7,9 @@ Wireguard needs to be already installed on all servers<br />
 Its recommended to run this on clean servers.<br />
 By default 10.0.x.x/8 is used.
 
+**ToDo**<br />
+- IPv4 + IPv6 simultaneously
+
 **Dependencies**<br />
 apt-get install wireguard
 
@@ -19,7 +22,9 @@ apt-get install wireguard -y
 
 **Prepare**<br />
 Rename hosts.example.json to hosts.json and fill it up<br />
-You can use * if you want to cross-connect to everything else
+You can use * if you want to cross-connect to everything else<br /><br />
+
+If you updated pipe-builder you may run pipe.py clean since we renamed the Server files on 0.3<br />
 
 **Examples**<br />
 
@@ -50,4 +55,15 @@ cross-connect + point-to-point<br />
 ```
 
 **Usage**<br />
-python3 pipe.py
+Builds or Updates the network<br />
+```
+python3 pipe.py build<br />
+```
+Shutdown all Wireguard pipe* connections<br />
+```
+python3 pipe.py shutdown<br />
+```
+Removes all Wireguard pipe* configuration files<br />
+```
+python3 pipe.py clean<br />
+```
