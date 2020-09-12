@@ -63,7 +63,7 @@ Builds or Updates the network<br />
 ```
 python3 pipe.py build
 ```
-Shutdown all Wireguard pipe* connections<br />
+Shutdown of all Wireguard pipe* connections<br />
 ```
 python3 pipe.py shutdown
 ```
