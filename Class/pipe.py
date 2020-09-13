@@ -77,7 +77,7 @@ class Pipe:
 
     def run(self):
         global targets
-        subnet,start,port = 1,2,51194
+        subnet,start,port = 1,4,51194
         crossConnect = []
         print("Launching")
         time.sleep(3)
@@ -105,5 +105,5 @@ class Pipe:
                     port +=1
             #Reset port and increase subnet
             port = 51194
-            start = 2
+            start = 4
             subnet +=1

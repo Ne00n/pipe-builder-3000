@@ -5,9 +5,9 @@ class Templator:
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)
         if port == 51194:
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/32 dev lo;'
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/30 dev lo;'
             template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
-            template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/32 dev lo;'
+            template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/30 dev lo;'
         template += '''
         SaveConfig = true
         Table = off
