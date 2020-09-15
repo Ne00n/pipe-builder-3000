@@ -26,18 +26,19 @@ class Pipe:
         #Disable old configs
         for client in parsed:
             #Only shutdown connections the server is in charge
-            if client.endswith("Server") and Filter == True or Filter == False:
+            if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
-                print("Stopping",client.replace("Server",""),"on",server)
-                self.cmd(server,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                print("Stopping",client.replace("Serv",""),"on",server)
+                self.cmd(server.replace("v6",""),'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
                 if delete == True:
-                    self.cmd(server,'rm -f /etc/wireguard/'+client+".conf",False)
+                    self.cmd(server.replace("v6",""),'rm -f /etc/wireguard/'+client+".conf",False)
                 #Stop Client
-                client = client.replace("pipe","").replace("Server","")
-                print("Stopping","pipe"+server,"on",client)
-                self.cmd(client.replace("pipe",""),'systemctl stop wg-quick@pipe'+server+' && systemctl disable wg-quick@pipe'+server,False)
+                v6 = 'v6' if client.endswith("v6Serv") else ''
+                client = client.replace("Serv","").replace("pipe","").replace("v6","")
+                print("Stopping","pipe"+server+v6,"on",client)
+                self.cmd(client,'systemctl stop wg-quick@pipe'+server+v6+' && systemctl disable wg-quick@pipe'+server+v6,False)
                 if delete == True:
-                    self.cmd(client.replace("pipe",""),'rm -f /etc/wireguard/pipe'+server+".conf",False)
+                    self.cmd(client,'rm -f /etc/wireguard/pipe'+server+v6+".conf",False)
 
     def clean(self):
         global targets
@@ -49,24 +50,25 @@ class Pipe:
         for server,data in targets.items():
             self.prepare(server,False)
 
-    def execute(self,subnet,start,port,client,server,privateServer,publicServer):
+    def execute(self,subnet,start,port,client,server,privateServer,publicServer,ipv6=False):
         T = Templator()
         #Generate Client private key
-        privateClient = self.cmd(client,'wg genkey',True)
+        privateClient = self.cmd(client.replace("v6",""),'wg genkey',True)
         #Generate Client public key
-        publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
+        publicClient = self.cmd(client.replace("v6",""),'echo "'+privateClient+'" | wg pubkey',True)
         #Generate Server config
         serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
-        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Server.conf && systemctl enable wg-quick@pipe'+client+'Server && systemctl start wg-quick@pipe'+client+'Server',False)
+        self.cmd(server.replace("v6",""),'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
         #Resolve hostname
-        ip = subprocess.check_output(['resolveip','-s',server]).decode("utf-8")
+        ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
+        ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Client config
         clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip())
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
-        self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
+        self.cmd(client.replace("v6",""),'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
         print('Done',client,'on',server)
 
     def run(self):
@@ -93,7 +95,16 @@ class Pipe:
                             self.execute(subnet,start,port,target,server,privateServer,publicServer)
                             start +=2
                             port +=1
+                    if data['v6'] == True:
+                        print("cross-connectv6™")
+                        for target,row in targets.items():
+                            #Prevent double connections & v4 peers
+                            if target not in crossConnect and row['v6'] == True:
+                                self.execute(subnet,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                start +=2
+                                port +=1
                 else:
+                    print("direct-connect™")
                     self.execute(subnet,start,port,client,server,privateServer,publicServer)
                     start +=2
                     port +=1

@@ -13,7 +13,7 @@ https://github.com/Ne00n/bird-spawner-3000
 Which uses bird2 that dynamically creates routes and reroutes traffic if a node goes down.<br />
 
 **ToDo**<br />
-- IPv4 + IPv6 simultaneously
+- VXLAN
 
 **Dependencies**<br />
 wireguard, python3
@@ -28,33 +28,34 @@ apt-get update && apt-get install wireguard -y
 Rename hosts.example.json to hosts.json and fill it up<br />
 You can use * if you want to cross-connect to everything else<br />
 
-If you updated pipe-builder you may run pipe.py clean since we renamed the Server files on 0.3<br />
+If you updated pipe-builder you may run pipe.py clean since we renamed the Server files.<br />
 
 **Examples**<br />
 
 point-to-point<br />
 ```
 {
- "Server1":{"Targets":["Server3","Server2"]},
- "Server2":{"Targets":["Server3"]}
+ "Server1":{"v6":false,"Targets":["Server3","Server2"]},
+ "Server2":{"v6":false,"Targets":["Server3"]}
 }
 ```
 
 cross-connect (mesh)<br />
+Currently only mesh has IPv6 support<br />
 ```
 {
- "Server1":{"Targets":["*"]},
- "Server2":{"Targets":["*"]},
- "Server3":{"Targets":["*"]}
+ "Server1":{"v6":true,"Targets":["*"]},
+ "Server2":{"v6":true,"Targets":["*"]},
+ "Server3":{"v6":false,"Targets":["*"]}
 }
 ```
 
 cross-connect + point-to-point<br />
 ```
 {
- "Server1":{"Targets":["*"]},
- "Server2":{"Targets":["*","Server5"]},
- "Server3":{"Targets":["*","Server4"]}
+ "Server1":{"v6":false,"Targets":["*"]},
+ "Server2":{"v6":false,"Targets":["*","Server5"]},
+ "Server3":{"v6":false,"Targets":["*","Server4"]}
 }
 ```
 
