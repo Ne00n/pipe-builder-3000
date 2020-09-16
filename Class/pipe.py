@@ -74,7 +74,7 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients)
+        clientConfig = T.genClient(targets,ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client.replace("v6",""),'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
