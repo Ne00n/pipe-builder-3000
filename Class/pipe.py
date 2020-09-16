@@ -55,13 +55,14 @@ class Pipe:
         return False if client.replace("v6","") in targets else True
 
     def execute(self,clients,subnet,start,port,client,server,privateServer,publicServer,ipv6=False):
+        global targets
         T = Templator()
         #Generate Client private key
         privateClient = self.cmd(client.replace("v6",""),'wg genkey',True)
         #Generate Client public key
         publicClient = self.cmd(client.replace("v6",""),'echo "'+privateClient+'" | wg pubkey',True)
         #Generate Server config
-        serverConfig = T.genServer(subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
+        serverConfig = T.genServer(targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
         self.cmd(server.replace("v6",""),'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
