@@ -50,7 +50,11 @@ class Pipe:
         for server,data in targets.items():
             self.prepare(server,False)
 
-    def execute(self,subnet,start,port,client,server,privateServer,publicServer,ipv6=False):
+    def isClient(self,client):
+        global targets
+        return False if client.replace("v6","") in targets else True
+
+    def execute(self,cRange,clients,subnet,start,port,client,server,privateServer,publicServer,ipv6=False):
         T = Templator()
         #Generate Client private key
         privateClient = self.cmd(client.replace("v6",""),'wg genkey',True)
@@ -65,7 +69,11 @@ class Pipe:
         ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
         ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Client config
-        clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip())
+        clientIP = False
+        if self.isClient(client) and client not in clients:
+            clients.append(client)
+            clientIP = True
+        clientConfig = T.genClient(ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,cRange)
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client.replace("v6",""),'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
@@ -73,8 +81,8 @@ class Pipe:
 
     def run(self):
         global targets
-        start,port = 4,51194
-        crossConnect = []
+        start,port,cRange = 4,51194,255
+        crossConnect,clients = [],[]
         print("Launching")
         time.sleep(3)
         for server,data in targets.items():
@@ -92,7 +100,7 @@ class Pipe:
                     for target in targets:
                         #Prevent double connections
                         if target not in crossConnect:
-                            self.execute(data['id'],start,port,target,server,privateServer,publicServer)
+                            self.execute(cRange,clients,data['id'],start,port,target,server,privateServer,publicServer)
                             start +=2
                             port +=1
                     if data['v6'] == True:
@@ -100,14 +108,13 @@ class Pipe:
                         for target,row in targets.items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
-                                self.execute(data['id'],start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                self.execute(cRange,clients,data['id'],start,port,target+"v6",server+"v6",privateServer,publicServer,True)
                                 start +=2
                                 port +=1
                 else:
                     print("direct-connect™")
-                    self.execute(data['id'],start,port,client,server,privateServer,publicServer)
+                    self.execute(cRange,clients,data['id'],start,port,client,server,privateServer,publicServer)
                     start +=2
                     port +=1
             #Reset port
-            port = 51194
-            start = 4
+            start,port,cRange = 4,51194,255
