@@ -35,8 +35,8 @@ If you updated pipe-builder you may run pipe.py clean since we renamed the Serve
 point-to-point<br />
 ```
 {
- "Server1":{"v6":false,"Targets":["Server3","Server2"]},
- "Server2":{"v6":false,"Targets":["Server3"]}
+ "Server1":{"id":1,"v6":false,"Targets":["Server3","Server2"]},
+ "Server2":{"id":2,"v6":false,"Targets":["Server3"]}
 }
 ```
 
@@ -44,18 +44,18 @@ cross-connect (mesh)<br />
 Currently only mesh has IPv6 support<br />
 ```
 {
- "Server1":{"v6":true,"Targets":["*"]},
- "Server2":{"v6":true,"Targets":["*"]},
- "Server3":{"v6":false,"Targets":["*"]}
+ "Server1":{"id":1,"v6":true,"Targets":["*"]},
+ "Server2":{"id":2,"v6":true,"Targets":["*"]},
+ "Server3":{"id":3,"v6":false,"Targets":["*"]}
 }
 ```
 
 cross-connect + point-to-point<br />
 ```
 {
- "Server1":{"v6":false,"Targets":["*"]},
- "Server2":{"v6":false,"Targets":["*","Server5"]},
- "Server3":{"v6":false,"Targets":["*","Server4"]}
+ "Server1":{"id":1,"v6":false,"Targets":["*"]},
+ "Server2":{"id":2,"v6":false,"Targets":["*","Server5"]},
+ "Server3":{"id":3,"v6":false,"Targets":["*","Server4"]}
 }
 ```
 

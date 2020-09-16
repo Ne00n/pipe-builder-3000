@@ -73,7 +73,7 @@ class Pipe:
 
     def run(self):
         global targets
-        subnet,start,port = 1,4,51194
+        start,port = 4,51194
         crossConnect = []
         print("Launching")
         time.sleep(3)
@@ -92,7 +92,7 @@ class Pipe:
                     for target in targets:
                         #Prevent double connections
                         if target not in crossConnect:
-                            self.execute(subnet,start,port,target,server,privateServer,publicServer)
+                            self.execute(data['id'],start,port,target,server,privateServer,publicServer)
                             start +=2
                             port +=1
                     if data['v6'] == True:
@@ -100,15 +100,14 @@ class Pipe:
                         for target,row in targets.items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
-                                self.execute(subnet,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                self.execute(data['id'],start,port,target+"v6",server+"v6",privateServer,publicServer,True)
                                 start +=2
                                 port +=1
                 else:
                     print("direct-connect™")
-                    self.execute(subnet,start,port,client,server,privateServer,publicServer)
+                    self.execute(data['id'],start,port,client,server,privateServer,publicServer)
                     start +=2
                     port +=1
-            #Reset port and increase subnet
+            #Reset port
             port = 51194
             start = 4
-            subnet +=1

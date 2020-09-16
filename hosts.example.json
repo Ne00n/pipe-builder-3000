@@ -1,4 +1,4 @@
 {
- "Server1":{"v6":false,"Targets":["Server3","Server2"]},
- "Server2":{"v6":false,"Targets":["Server3"]}
+ "Server1":{"id":1,"v6":false,"Targets":["Server3","Server2"]},
+ "Server2":{"id":2,"v6":false,"Targets":["Server3"]}
 }
