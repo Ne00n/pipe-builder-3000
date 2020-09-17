@@ -36,7 +36,7 @@ class Templator:
         Table = off
         [Peer]
         PublicKey = '''+publicKey+'''
-        AllowedIPs = 10.0.0.0/8'''
+        AllowedIPs = 0.0.0.0/0'''
         return template
     def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
         template = '''[Interface]
@@ -53,7 +53,7 @@ class Templator:
         Table = off
         [Peer]
         PublicKey = '''+str(publicKey)+'''
-        AllowedIPs = 10.0.0.0/8
+        AllowedIPs = 0.0.0.0/0
         Endpoint = '''+str(ip)+''':'''+str(port)+'''
         PersistentKeepalive = 20'''
         return template
