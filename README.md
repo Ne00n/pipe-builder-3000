@@ -63,6 +63,16 @@ cross-connect + point-to-point<br />
 }
 ```
 
+/etc/hostst<br />
+```
+bla.bla.bla.bla    Server1
+bla:bla:piss::bla  Server1v6
+bla.bla.bla.bla    Server2
+bla:bla:beef::bla  Server2v6
+bla.bla.bla.bla    Server3
+bla:bla:bacon::bla Server3v6
+```
+
 **Usage**<br />
 Builds or Updates the network<br />
 ```
