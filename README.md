@@ -63,7 +63,7 @@ cross-connect + point-to-point<br />
 }
 ```
 
-/etc/hostst<br />
+/etc/hosts<br />
 ```
 bla.bla.bla.bla    Server1
 bla:bla:piss::bla  Server1v6
