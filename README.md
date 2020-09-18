@@ -25,7 +25,7 @@ wireguard, python3
 **Debian 10**<br />
 ```
 sh -c "echo 'deb http://deb.debian.org/debian buster-backports main contrib non-free' > /etc/apt/sources.list.d/buster-backports.list"
-apt-get update && apt-get install wireguard -y
+apt-get update && apt-get install wireguard python3 -y
 ```
 
 **Prepare**<br />
