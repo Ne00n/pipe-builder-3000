@@ -1,13 +1,15 @@
 from Class.pipe import Pipe
 import sys
-param = sys.argv[1]
 print("Pipe Builder 3000")
-pipe = Pipe()
-if param == "build":
-    pipe.run()
-elif param == "shutdown":
-    pipe.shutdown()
-elif param == "clean":
-    pipe.clean()
-else:
+config = "hosts.json"
+if len(sys.argv) > 2:
+    config = sys.argv[2]
+pipe = Pipe(config)
+if len(sys.argv) == 1:
     print("build, shutdown, clean")
+elif sys.argv[1] == "build":
+    pipe.run()
+elif sys.argv[1] == "shutdown":
+    pipe.shutdown()
+elif sys.argv[1] == "clean":
+    pipe.clean()
