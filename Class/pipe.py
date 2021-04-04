@@ -4,10 +4,10 @@ from Class.templator import Templator
 targets = []
 
 class Pipe:
-    def __init__(self):
+    def __init__(self,config="hosts.json"):
         global targets
-        print("Loading config")
-        with open('hosts.json') as handle:
+        print("Loading",config)
+        with open(config) as handle:
             targets = json.loads(handle.read())
 
     def cmd(self,server,command,interactive):
