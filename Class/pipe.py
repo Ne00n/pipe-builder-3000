@@ -71,13 +71,17 @@ class Pipe:
 
     def execute(self,clients,subnet,start,port,client,server,privateServer,publicServer,ipv6=False):
         global targets
+        v6only = False
+        #Templator
         T = Templator()
         #Generate Client private key
         privateClient = self.cmd(client,'wg genkey',True)
         #Generate Client public key
         publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey',True)
+        #Check if we are on v6 only
+        if self.checkResolve(server.replace("v6","")) is False and self.checkResolve(server+"v6") is True: v6only = True
         #Generate Server config
-        serverConfig = T.genServer(targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip())
+        serverConfig = T.genServer(targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
