@@ -99,6 +99,11 @@ class Pipe:
                     crossConnect.append(server)
                     print("cross-connect™")
                     for target in targets:
+                        #Skipping non resolvable
+                        ip = subprocess.check_output(['dig','ANY','+short',target]).decode("utf-8")
+                        if not ip:
+                            print("Skipping",target,"since not resolvable");
+                            continue
                         #Prevent double connections
                         if target not in crossConnect:
                             self.execute(clients,data['id'],start,port,target,server,privateServer,publicServer)
