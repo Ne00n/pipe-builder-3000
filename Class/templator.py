@@ -26,12 +26,12 @@ class Templator:
         PrivateKey = '''+str(privateKey)
         if port == 51194:
             template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/30 dev lo;'
+            if v6only is False and port == 51194:
+                template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
             template += 'ip link add vxlan1 type vxlan id 1 dstport 4789 local 10.0.'+str(subnet)+'.1; ip link set vxlan1 up;'
             template += 'ip addr add 10.0.251.'+str(subnet)+'/24 dev vxlan1;'
             template += self.genVXLAN(targets)
             template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/30 dev lo; ip link delete vxlan1;'
-        if v6only is False and port == 51194:
-            template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
         template += '''
         SaveConfig = true
         Table = off
