@@ -31,7 +31,7 @@ class Pipe:
         #Fetch old configs
         configs = self.cmd(server+suffix,'ls /etc/wireguard/',True)
         #Parse configs
-        parsed = re.findall("^pipe[A-Za-z0-9]+",configs, re.MULTILINE)
+        parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
         #Disable old configs
         for client in parsed:
             #Only shutdown connections the server is in charge
@@ -43,27 +43,27 @@ class Pipe:
                     self.cmd(server+suffix,'rm -f /etc/wireguard/'+client+".conf",False)
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
-                client = client.replace("Serv","").replace("pipe","").replace("v6","")
+                client = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
                 if self.checkResolve(client) is False and self.checkResolve(client+"v6") is True:
                     print("Switching",client,"to v6 only")
                     suffix ="v6"
                 else:
                     suffix = ""
-                print("Stopping","pipe"+server+v6,"on",client+suffix)
-                self.cmd(client+suffix,'systemctl stop wg-quick@pipe'+server+v6+' && systemctl disable wg-quick@pipe'+server+v6,False)
+                print("Stopping",self.targets['prefix']+server+v6,"on",client+suffix)
+                self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6,False)
                 if delete == True:
-                    self.cmd(client+suffix,'rm -f /etc/wireguard/pipe'+server+v6+".conf",False)
+                    self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf",False)
 
     def clean(self):
-        for server,data in self.targets.items():
+        for server,data in self.targets['servers'].items():
             self.prepare(server,False,True)
 
     def shutdown(self):
-        for server,data in self.targets.items():
+        for server,data in self.targets['servers'].items():
             self.prepare(server,False)
 
     def isClient(self,client):
-        return False if client.replace("v6","") in self.targets else True
+        return False if client.replace("v6","") in self.targets['servers'] else True
 
     def execute(self,clients,data,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         v6only = False
@@ -76,10 +76,10 @@ class Pipe:
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Generate Server config
-        serverConfig = T.genServer(self.targets,data,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
+        serverConfig = T.genServer(self.targets['servers'],data,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
-        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
+        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv',False)
         if dummy is True: return True
         #Resolve hostname
         ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
@@ -89,10 +89,10 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets,ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
-        self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
+        self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server,False)
         print('Done',client,'on',server)
 
     def run(self):
@@ -100,7 +100,7 @@ class Pipe:
         crossConnect,clients = [],[]
         print("Launching")
         time.sleep(3)
-        for server,data in self.targets.items():
+        for server,data in self.targets['servers'].items():
             #Prepare
             port = data['basePort']
             self.prepare(server)
@@ -119,7 +119,7 @@ class Pipe:
                     crossConnect.append(server)
                     execute = False
                     print("cross-connect™")
-                    for target in self.targets:
+                    for target in self.targets['servers']:
                         #Prevent v4 connections to v6 only hosts
                         if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
                         #Prevent double connections
@@ -130,7 +130,7 @@ class Pipe:
                             port +=1
                     if data['v6'] == True:
                         print("cross-connectv6™")
-                        for target,row in self.targets.items():
+                        for target,row in self.targets['servers'].items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
                                 self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
