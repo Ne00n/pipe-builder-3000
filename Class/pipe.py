@@ -5,10 +5,9 @@ targets = []
 
 class Pipe:
     def __init__(self,config="hosts.json"):
-        global targets
         print("Loading",config)
         with open(config) as handle:
-            targets = json.loads(handle.read())
+            self.targets = json.loads(handle.read())
 
     def cmd(self,server,command,interactive):
         cmd = ['ssh','root@'+server,command]
@@ -56,21 +55,17 @@ class Pipe:
                     self.cmd(client+suffix,'rm -f /etc/wireguard/pipe'+server+v6+".conf",False)
 
     def clean(self):
-        global targets
-        for server,data in targets.items():
+        for server,data in self.targets.items():
             self.prepare(server,False,True)
 
     def shutdown(self):
-        global targets
-        for server,data in targets.items():
+        for server,data in self.targets.items():
             self.prepare(server,False)
 
     def isClient(self,client):
-        global targets
-        return False if client.replace("v6","") in targets else True
+        return False if client.replace("v6","") in self.targets else True
 
     def execute(self,clients,subnet,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
-        global targets
         v6only = False
         #Templator
         T = Templator()
@@ -81,7 +76,7 @@ class Pipe:
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Generate Server config
-        serverConfig = T.genServer(targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
+        serverConfig = T.genServer(self.targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
@@ -94,19 +89,18 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(targets,ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
+        clientConfig = T.genClient(self.targets,ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
         print('Done',client,'on',server)
 
     def run(self):
-        global targets
         start,port = 4,51194
         crossConnect,clients = [],[]
         print("Launching")
         time.sleep(3)
-        for server,data in targets.items():
+        for server,data in self.targets.items():
             #Prepare
             self.prepare(server)
             print("---",server,"Deploying","---")
@@ -124,7 +118,7 @@ class Pipe:
                     crossConnect.append(server)
                     execute = False
                     print("cross-connect™")
-                    for target in targets:
+                    for target in self.targets:
                         #Prevent v4 connections to v6 only hosts
                         if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
                         #Prevent double connections
@@ -135,7 +129,7 @@ class Pipe:
                             port +=1
                     if data['v6'] == True:
                         print("cross-connectv6™")
-                        for target,row in targets.items():
+                        for target,row in self.targets.items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
                                 self.execute(clients,data['id'],start,port,target+"v6",server+"v6",privateServer,publicServer,True)
