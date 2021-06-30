@@ -65,7 +65,7 @@ class Pipe:
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets else True
 
-    def execute(self,clients,subnet,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
+    def execute(self,clients,data,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         v6only = False
         #Templator
         T = Templator()
@@ -76,7 +76,7 @@ class Pipe:
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Generate Server config
-        serverConfig = T.genServer(self.targets,subnet,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
+        serverConfig = T.genServer(self.targets,data,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/pipe'+client+'Serv.conf && systemctl enable wg-quick@pipe'+client+'Serv && systemctl start wg-quick@pipe'+client+'Serv',False)
@@ -89,19 +89,20 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets,ip.rstrip(),subnet,start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
+        clientConfig = T.genClient(self.targets,ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/pipe'+server+'.conf && systemctl enable wg-quick@pipe'+server+' && systemctl start wg-quick@pipe'+server,False)
         print('Done',client,'on',server)
 
     def run(self):
-        start,port = 4,51194
+        start = 4
         crossConnect,clients = [],[]
         print("Launching")
         time.sleep(3)
         for server,data in self.targets.items():
             #Prepare
+            port = data['basePort']
             self.prepare(server)
             print("---",server,"Deploying","---")
             #Check if v6 only
@@ -123,7 +124,7 @@ class Pipe:
                         if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
                         #Prevent double connections
                         if target not in crossConnect:
-                            self.execute(clients,data['id'],start,port,target,server,privateServer,publicServer)
+                            self.execute(clients,data,start,port,target,server,privateServer,publicServer)
                             execute = True
                             start +=2
                             port +=1
@@ -132,7 +133,7 @@ class Pipe:
                         for target,row in self.targets.items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
-                                self.execute(clients,data['id'],start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
                                 execute = True
                                 start +=2
                                 port +=1
@@ -140,11 +141,11 @@ class Pipe:
                     if execute is False:
                         print("Adding dummy for",server+suffix,"so vxlan works fine")
                         port = 51194
-                        self.execute(clients,data['id'],start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
+                        self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
                 else:
                     print("direct-connect™")
-                    self.execute(clients,data['id'],start,port,client,server,privateServer,publicServer)
+                    self.execute(clients,data,start,port,client,server,privateServer,publicServer)
                     start +=2
                     port +=1
             #Reset port
-            start,port = 4,51194
+            start = 4

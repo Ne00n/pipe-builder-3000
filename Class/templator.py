@@ -19,19 +19,19 @@ class Templator:
             template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.0.250.'+str(count)+';'
             count += 1
         return template
-    def genServer(self,targets,subnet,server,port,privateKey,publicKey,v6only=False):
+    def genServer(self,targets,data,server,port,privateKey,publicKey,v6only=False):
         template = '''[Interface]
-        Address = 10.0.'''+str(subnet)+'''.'''+str(server)+'''/31
+        Address = 10.0.'''+str(data['id'])+'''.'''+str(server)+'''/31
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)
-        if port == 51194:
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/30 dev lo;'
+        if port == data['basePort']:
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
             if v6only is False and port == 51194:
                 template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
-            template += 'ip link add vxlan1 type vxlan id 1 dstport 4789 local 10.0.'+str(subnet)+'.1; ip link set vxlan1 up;'
-            template += 'ip addr add 10.0.251.'+str(subnet)+'/24 dev vxlan1;'
+            template += 'ip link add vxlan1 type vxlan id 1 dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan1 up;'
+            template += 'ip addr add 10.0.251.'+str(data['id'])+'/24 dev vxlan1;'
             template += self.genVXLAN(targets)
-            template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/30 dev lo; ip link delete vxlan1;'
+            template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan1;'
         template += '''
         SaveConfig = true
         Table = off
