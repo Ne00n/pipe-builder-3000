@@ -76,7 +76,11 @@ class Pipe:
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],data,start,port,privateServer.rstrip(),publicClient.rstrip(),v6only)
+        serverConfig = T.genServer(self.targets['servers'],data,start,port,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
+        #Type Check
+        if data['type'] == 'boringtun':
+            serviceConfig = T.genBoringtun()
+            self.cmd(server,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf',False)
         #Put Server config & Start
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv',False)
@@ -89,7 +93,11 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""))
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
+        #Type Check
+        if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
+            serviceConfig = T.genBoringtun()
+            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server,False)
@@ -137,15 +145,16 @@ class Pipe:
                                 execute = True
                                 start +=2
                                 port +=1
-                    #Check if target has any wg configuration
-                    if execute is False:
-                        print("Adding dummy for",server+suffix,"so vxlan works fine")
-                        port = 51194
-                        self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
                 else:
                     print("direct-connect™")
                     self.execute(clients,data,start,port,client,server,privateServer,publicServer)
+                    execute = True
                     start +=2
                     port +=1
+            #Check if target has any wg configuration
+            if execute is False:
+                print("Adding dummy for",server+suffix,"so vxlan works fine")
+                port = 51194
+                self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
             #Reset port
             start = 4

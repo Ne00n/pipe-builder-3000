@@ -1,7 +1,9 @@
 {
   "prefix":"pipe",
+  "vxlanSub":251,
+  "vxlanID":1,
   "servers":{
-    "Server1":{"id":1,"basePort":51194,"v6":false,"Targets":["Server3","Server2"]},
-    "Server2":{"id":2,"basePort":51194,"v6":false,"Targets":["Server3"]}
+    "Server1":{"id":1,"basePort":51194,"type":"native","v6":false,"Targets":["Server3","Server2"]},
+    "Server2":{"id":2,"basePort":51194,"type":"native","v6":false,"Targets":["Server3"]}
   }
 }
