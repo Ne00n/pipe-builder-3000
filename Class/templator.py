@@ -8,30 +8,29 @@ class Templator:
                 if client == target and count == True:
                     return len(clients)
         return clients
-    def genVXLAN(self,targets):
-        template,count = "",1
-        for node in targets:
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.0.'+str(count)+'.1;'
-            count += 1
+    def genVXLAN(self,targets,vxlan):
+        template = ""
+        for node,data in targets.items():
+            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.'+str(data['id'])+'.1;'
         clients = self.getUniqueClients(targets)
         count = 1
         for client in clients:
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan1 dst 10.0.250.'+str(count)+';'
+            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.250.'+str(count)+';'
             count += 1
         return template
-    def genServer(self,targets,subnet,server,port,privateKey,publicKey,v6only=False):
+    def genServer(self,servers,data,server,port,privateKey,publicKey,targets,v6only=False):
         template = '''[Interface]
-        Address = 10.0.'''+str(subnet)+'''.'''+str(server)+'''/31
+        Address = 10.0.'''+str(data['id'])+'''.'''+str(server)+'''/31
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)
-        if port == 51194:
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(subnet)+'.1/30 dev lo;'
+        if port == data['basePort']:
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
             if v6only is False and port == 51194:
                 template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
-            template += 'ip link add vxlan1 type vxlan id 1 dstport 4789 local 10.0.'+str(subnet)+'.1; ip link set vxlan1 up;'
-            template += 'ip addr add 10.0.251.'+str(subnet)+'/24 dev vxlan1;'
-            template += self.genVXLAN(targets)
-            template += '\nPostDown = ip addr del 10.0.'+str(subnet)+'.1/30 dev lo; ip link delete vxlan1;'
+            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan'+str(targets['vxlanID'])+' up;'
+            template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
+            template += self.genVXLAN(servers,targets['vxlanID'])
+            template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
         template += '''
         SaveConfig = true
         Table = off
@@ -39,17 +38,17 @@ class Templator:
         PublicKey = '''+publicKey+'''
         AllowedIPs = 0.0.0.0/0'''
         return template
-    def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
+    def genClient(self,servers,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client,targets):
         template = '''[Interface]
         Address = 10.0.'''+str(subnet)+'''.'''+str(server+1)+'''/31
         PrivateKey = '''+str(privateKey)
         if clientIP == True:
-            vxlanIP = self.getUniqueClients(targets,client,True) + len(targets)
+            vxlanIP = self.getUniqueClients(servers,client,True) + len(servers)
             template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; ip addr add 10.0.250.'+str(len(clients))+'/32 dev lo;'
-            template += 'ip link add vxlan1 type vxlan id 1 dstport 4789 local 10.0.250.'+str(len(clients))+'; ip link set vxlan1 up;'
-            template += 'ip addr add 10.0.251.'+str(vxlanIP)+'/24 dev vxlan1;'
-            template += self.genVXLAN(targets)
-            template += '\nPostDown = ip addr del 10.0.250.'+str(len(clients))+'/32 dev lo; ip link delete vxlan1;'
+            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.250.'+str(len(clients))+'; ip link set vxlan'+str(targets['vxlanID'])+' up;'
+            template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(vxlanIP)+'/24 dev vxlan'+str(targets['vxlanID'])+';'
+            template += self.genVXLAN(servers,targets['vxlanID'])
+            template += '\nPostDown = ip addr del 10.0.250.'+str(len(clients))+'/32 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
         template += '''
         Table = off
         [Peer]
@@ -57,4 +56,10 @@ class Templator:
         AllowedIPs = 0.0.0.0/0
         Endpoint = '''+str(ip)+''':'''+str(port)+'''
         PersistentKeepalive = 20'''
+        return template
+    def genBoringtun(self):
+        template = '''[Service]
+Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun
+Environment=WG_SUDO=1
+        '''
         return template
