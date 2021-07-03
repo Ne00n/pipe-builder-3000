@@ -95,9 +95,9 @@ class Pipe:
             clientIP = True
         clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
         #Type Check
-        if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
+        if client.replace("v6","") in self.targets['servers'] and self.targets['servers'][client.replace("v6","")]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
+            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf',False)
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server,False)
