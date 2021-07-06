@@ -1,4 +1,4 @@
-import subprocess, time, json, re
+import subprocess, random, time, json, re
 from Class.templator import Templator
 
 targets = []
@@ -110,7 +110,10 @@ class Pipe:
         time.sleep(3)
         for server,data in self.targets['servers'].items():
             #Prepare
-            port = data['basePort']
+            if data['basePort'] == "random":
+                port = random.randint(1500, 55000)
+            else:
+                port = data['basePort']
             self.prepare(server)
             print("---",server,"Deploying","---")
             #Check if v6 only
