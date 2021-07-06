@@ -24,12 +24,12 @@ class Pipe:
     def prepare(self,server,Filter=True,delete=False):
         print("---",server,"Preparing","---")
         #Check if v6 only
-        suffix = ""
+        serverSuffix = ""
         if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
             print("Switching",server,"to v6 only")
-            suffix ="v6"
+            serverSuffix ="v6"
         #Fetch old configs
-        configs = self.cmd(server+suffix,'ls /etc/wireguard/',True)
+        configs = self.cmd(server+serverSuffix,'ls /etc/wireguard/',True)
         #Parse configs
         parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
         #Disable old configs
@@ -38,9 +38,9 @@ class Pipe:
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
-                self.cmd(server+suffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
                 if delete == True:
-                    self.cmd(server+suffix,'rm -f /etc/wireguard/'+client+".conf",False)
+                    self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf",False)
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
                 client = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
