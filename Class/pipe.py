@@ -130,6 +130,7 @@ class Pipe:
                     for target in self.targets['servers']:
                         #Prevent v4 connections to v6 only hosts
                         if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
+                        if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True: continue
                         #Prevent double connections
                         if target not in crossConnect:
                             self.execute(clients,data,start,port,target,server,privateServer,publicServer)
