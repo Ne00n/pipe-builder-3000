@@ -1,4 +1,4 @@
-import subprocess, time, json, re
+import subprocess, random, time, json, re
 from Class.templator import Templator
 
 targets = []
@@ -24,12 +24,12 @@ class Pipe:
     def prepare(self,server,Filter=True,delete=False):
         print("---",server,"Preparing","---")
         #Check if v6 only
-        suffix = ""
+        serverSuffix = ""
         if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
             print("Switching",server,"to v6 only")
-            suffix ="v6"
+            serverSuffix ="v6"
         #Fetch old configs
-        configs = self.cmd(server+suffix,'ls /etc/wireguard/',True)
+        configs = self.cmd(server+serverSuffix,'ls /etc/wireguard/',True)
         #Parse configs
         parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
         #Disable old configs
@@ -38,9 +38,9 @@ class Pipe:
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
-                self.cmd(server+suffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
+                self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client,False)
                 if delete == True:
-                    self.cmd(server+suffix,'rm -f /etc/wireguard/'+client+".conf",False)
+                    self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf",False)
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
                 client = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
@@ -95,9 +95,9 @@ class Pipe:
             clientIP = True
         clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
         #Type Check
-        if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
+        if client.replace("v6","") in self.targets['servers'] and self.targets['servers'][client.replace("v6","")]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
+            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf',False)
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
         self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server,False)
@@ -110,7 +110,10 @@ class Pipe:
         time.sleep(3)
         for server,data in self.targets['servers'].items():
             #Prepare
-            port = data['basePort']
+            if data['basePort'] == "random":
+                port = random.randint(1500, 55000)
+            else:
+                port = data['basePort']
             self.prepare(server)
             print("---",server,"Deploying","---")
             #Check if v6 only
@@ -130,6 +133,7 @@ class Pipe:
                     for target in self.targets['servers']:
                         #Prevent v4 connections to v6 only hosts
                         if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
+                        if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True: continue
                         #Prevent double connections
                         if target not in crossConnect:
                             self.execute(clients,data,start,port,target,server,privateServer,publicServer)
