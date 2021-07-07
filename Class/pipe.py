@@ -1,7 +1,6 @@
 import subprocess, random, time, json, re
 from Class.templator import Templator
-
-targets = []
+from threading import Thread
 
 class Pipe:
     def __init__(self,config="hosts.json"):
@@ -55,12 +54,30 @@ class Pipe:
                     self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf",False)
 
     def clean(self):
+        threads = []
+        answer = input("Use Threading? (y/n): ")
         for server,data in self.targets['servers'].items():
-            self.prepare(server,False,True)
+            if answer != "y":
+                self.prepare(server,False,True)
+            else:
+                threads.append(Thread(target=self.prepare, args=([server,False,True])))
+        if answer == "y": self.lunchThreads(threads)
 
     def shutdown(self):
+        threads = []
+        answer = input("Use Threading? (y/n): ")
         for server,data in self.targets['servers'].items():
-            self.prepare(server,False)
+            if answer != "y":
+                self.prepare(server,False)
+            else:
+                threads.append(Thread(target=self.prepare, args=([server,False])))
+        if answer == "y": self.lunchThreads(threads)
+
+    def lunchThreads(self,threads):
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
 
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets['servers'] else True
