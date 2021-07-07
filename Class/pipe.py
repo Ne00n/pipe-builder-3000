@@ -129,7 +129,7 @@ class Pipe:
         for server,data in self.targets['servers'].items():
             #Prepare
             if data['basePort'] == "random":
-                port = random.randint(1500, 55000)
+                self.targets['servers'][server]['basePort'] = port = random.randint(1500, 55000)
             else:
                 port = data['basePort']
             self.prepare(server)
