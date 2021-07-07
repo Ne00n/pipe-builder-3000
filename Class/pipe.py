@@ -122,7 +122,8 @@ class Pipe:
 
     def run(self):
         start = 4
-        crossConnect,clients = [],[]
+        crossConnect,clients,threads = [],[],[]
+        answer = input("Use Threading? (y/n): ")
         print("Launching")
         time.sleep(3)
         for server,data in self.targets['servers'].items():
@@ -153,7 +154,10 @@ class Pipe:
                         if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True: continue
                         #Prevent double connections
                         if target not in crossConnect:
-                            self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                            if answer != "y":
+                                self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                            else:
+                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
                             execute = True
                             start +=2
                             port +=1
@@ -162,13 +166,19 @@ class Pipe:
                         for target,row in self.targets['servers'].items():
                             #Prevent double connections & v4 peers
                             if target not in crossConnect and row['v6'] == True:
-                                self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                if answer != "y":
+                                    self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                else:
+                                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
                                 execute = True
                                 start +=2
                                 port +=1
                 else:
                     print("direct-connect™")
-                    self.execute(clients,data,start,port,client,server,privateServer,publicServer)
+                    if answer != "y":
+                        self.execute(clients,data,start,port,client,server,privateServer,publicServer)
+                    else:
+                        threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
                     execute = True
                     start +=2
                     port +=1
@@ -176,6 +186,10 @@ class Pipe:
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
                 port = 51194
-                self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
-            #Reset port
-            start = 4
+                if answer != "y":
+                    self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
+                else:
+                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True])))
+            if answer == "y": self.lunchThreads(threads)
+            #Reset stuff
+            threads,start = [],4
