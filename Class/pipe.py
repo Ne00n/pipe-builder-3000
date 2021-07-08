@@ -68,6 +68,16 @@ class Pipe:
                 threads.append(Thread(target=self.prepare, args=([server,False,True])))
         if answer == "y": self.lunchThreads(threads)
 
+    def check(self):
+        for server,data in self.targets['servers'].items():
+            print("---",server,"Checking","---")
+            suffix = ""
+            if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
+                print("Switching",server,"to v6 only")
+                suffix = "v6"
+            nics = self.cmd(server+suffix,'ip addr show')[0]
+            print(nics)
+
     def shutdown(self):
         threads = []
         answer = input("Use Threading? (y/n): ")
