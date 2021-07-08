@@ -81,7 +81,7 @@ class Pipe:
     def lunchThreads(self,threads):
         for thread in threads:
             thread.start()
-            time.sleep(0.1)
+            time.sleep(0.2)
         for thread in threads:
             thread.join()
 
