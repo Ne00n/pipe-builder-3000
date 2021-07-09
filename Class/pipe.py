@@ -25,10 +25,10 @@ class Pipe:
         if not ip: return False
         return True
 
-    def prepare(self,server,Filter=True,delete=False):
+    def prepare(self,server,threading=False,Filter=True,delete=False):
         print("---",server,"Preparing","---")
         #Check if v6 only
-        serverSuffix = ""
+        serverSuffix,threads = "",[]
         if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
             print("Switching",server,"to v6 only")
             serverSuffix ="v6"
@@ -42,7 +42,10 @@ class Pipe:
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
-                self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
+                if threading:
+                    threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
+                else:
+                    self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True:
                     self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
                 #Stop Client
@@ -54,16 +57,20 @@ class Pipe:
                 else:
                     suffix = ""
                 print("Stopping",self.targets['prefix']+server+v6,"on",client+suffix)
-                self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
+                if threading:
+                    threads.append(Thread(target=self.cmd, args=([client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
+                else:
+                    self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
                 if delete == True:
                     self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
-
+        if threading: self.lunchThreads(threads)
+        
     def clean(self):
         threads = []
         answer = input("Use Threading? (y/n): ")
         for server,data in self.targets['servers'].items():
             if answer != "y":
-                self.prepare(server,False,True)
+                self.prepare(server,False,False,True)
             else:
                 threads.append(Thread(target=self.prepare, args=([server,False,True])))
         if answer == "y": self.lunchThreads(threads)
@@ -83,7 +90,7 @@ class Pipe:
         answer = input("Use Threading? (y/n): ")
         for server,data in self.targets['servers'].items():
             if answer != "y":
-                self.prepare(server,False)
+                self.prepare(server,False,False)
             else:
                 threads.append(Thread(target=self.prepare, args=([server,False])))
         if answer == "y": self.lunchThreads(threads)
@@ -137,9 +144,10 @@ class Pipe:
         print('Done',client,'on',server)
 
     def run(self):
-        start = 4
+        threading,start = False,4
         crossConnect,clients,threads = [],[],[]
         answer = input("Use Threading? (y/n): ")
+        if answer == "y": threading = True
         print("Launching")
         time.sleep(3)
         for server,data in self.targets['servers'].items():
@@ -148,7 +156,7 @@ class Pipe:
                 self.targets['servers'][server]['basePort'] = port = random.randint(1500, 55000)
             else:
                 port = data['basePort']
-            self.prepare(server)
+            self.prepare(server,threading)
             print("---",server,"Deploying","---")
             #Check if v6 only
             v6only,suffix = False,""
