@@ -24,7 +24,7 @@ class Templator:
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)
         if port == data['basePort']:
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
             if v6only is False and port == data['basePort']:
                 template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
             template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan'+str(targets['vxlanID'])+' up;'
@@ -44,7 +44,7 @@ class Templator:
         PrivateKey = '''+str(privateKey)
         if clientIP == True:
             vxlanIP = self.getUniqueClients(servers,client,True) + len(servers)
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add 10.0.250.'+str(len(clients))+'/32 dev lo;'
+            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.250.'+str(len(clients))+'/32 dev lo;'
             template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.250.'+str(len(clients))+'; ip link set vxlan'+str(targets['vxlanID'])+' up;'
             template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(vxlanIP)+'/24 dev vxlan'+str(targets['vxlanID'])+';'
             template += self.genVXLAN(servers,targets['vxlanID'])
