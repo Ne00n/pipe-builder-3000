@@ -46,7 +46,7 @@ class Pipe:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
                 elif client not in ignorelist:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
-                if delete == True:
+                if delete == True and client not in ignorelist:
                     self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
@@ -61,7 +61,7 @@ class Pipe:
                     threads.append(Thread(target=self.cmd, args=([client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
                 elif client not in ignorelist:
                     self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
-                if delete == True:
+                if delete == True and client not in ignorelist:
                     self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
         if threading: self.lunchThreads(threads)
 
