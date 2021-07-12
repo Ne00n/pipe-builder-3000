@@ -25,7 +25,7 @@ class Pipe:
         if not ip: return False
         return True
 
-    def prepare(self,server,threading=False,Filter=True,delete=False):
+    def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[]):
         print("---",server,"Preparing","---")
         #Check if v6 only
         serverSuffix,threads = "",[]
@@ -42,9 +42,9 @@ class Pipe:
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
-                if threading:
+                if threading and client not in ignorelist:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
-                else:
+                elif client not in ignorelist:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True:
                     self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
@@ -57,22 +57,26 @@ class Pipe:
                 else:
                     suffix = ""
                 print("Stopping",self.targets['prefix']+server+v6,"on",client+suffix)
-                if threading:
+                if threading and client not in ignorelist:
                     threads.append(Thread(target=self.cmd, args=([client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
-                else:
+                elif client not in ignorelist:
                     self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
                 if delete == True:
                     self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
         if threading: self.lunchThreads(threads)
-        
+
     def clean(self):
-        threads = []
+        threads,ignoreList = [],[]
         answer = input("Use Threading? (y/n): ")
+        ignore = input("Any nodes to ignore? (Name,Name../n): ")
+        if ignore != "n":
+            ignoreList = ignore.split(",")
         for server,data in self.targets['servers'].items():
+            if server in ignoreList: continue
             if answer != "y":
-                self.prepare(server,False,False,True)
+                self.prepare(server,False,False,True,ignoreList)
             else:
-                threads.append(Thread(target=self.prepare, args=([server,False,True])))
+                threads.append(Thread(target=self.prepare, args=([server,False,False,True,ignoreList])))
         if answer == "y": self.lunchThreads(threads)
 
     def check(self):
