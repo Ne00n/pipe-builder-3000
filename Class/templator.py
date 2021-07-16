@@ -24,7 +24,7 @@ class Templator:
         ListenPort = '''+str(port)+'''
         PrivateKey = '''+str(privateKey)
         if port == data['basePort']:
-            if data['type'] != "boringtun":
+            if data['type'] != "boringtun" or data['type'] != "container":
                 template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
             else:
                 template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
