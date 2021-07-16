@@ -57,8 +57,8 @@ class Templator:
         [Peer]
         PublicKey = '''+str(publicKey)+'''
         AllowedIPs = 0.0.0.0/0
-        Endpoint = '''+str(ip)+''':'''+str(port)+'''
-        PersistentKeepalive = 20'''
+        Endpoint = '''+str(ip)+''':'''+str(port)
+        if clientIP == True: template += '\nPersistentKeepalive = 20'
         return template
     def genBoringtun(self):
         template = '''[Service]
