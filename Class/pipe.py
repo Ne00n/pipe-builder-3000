@@ -216,7 +216,6 @@ class Pipe:
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
-                port = 51194
                 if answer != "y":
                     self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
                 else:
