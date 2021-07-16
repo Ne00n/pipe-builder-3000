@@ -11,11 +11,14 @@ class Pipe:
     def cmd(self,server,command):
         cmd = ['ssh','root@'+server,command]
         for run in range(4):
-            p = subprocess.run(cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
-            if p.returncode != 0:
-                print("Warning got returncode",p.returncode,"on",server)
-                print("Error:",p.stderr.decode('utf-8'))
-            if p.returncode != 255: break
+            try:
+                p = subprocess.run(cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                if p.returncode != 0:
+                    print("Warning got returncode",p.returncode,"on",server)
+                    print("Error:",p.stderr.decode('utf-8'))
+                if p.returncode != 255: break
+            except Exception as e:
+                print("Error:",e)
             print("Retrying",cmd,"on",server)
             time.sleep(random.randint(5, 15))
         return [p.stdout.decode('utf-8'),p.stderr.decode('utf-8')]
