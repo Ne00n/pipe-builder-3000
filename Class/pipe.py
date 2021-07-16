@@ -28,7 +28,7 @@ class Pipe:
         if not ip: return False
         return True
 
-    def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[]):
+    def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False):
         print("---",server,"Preparing","---")
         #Check if v6 only
         serverSuffix,threads = "",[]
@@ -44,28 +44,28 @@ class Pipe:
             #Only shutdown connections the server is in charge
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
+                clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
                 print("Stopping",client.replace("Serv",""),"on",server)
-                if threading and client not in ignorelist:
+                if threading and clientName not in ignorelist:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
-                elif client not in ignorelist:
+                elif clientName not in ignorelist:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
-                if delete == True and client not in ignorelist:
+                if delete == True and clientName not in ignorelist or clean == True and clientName in ignorelist:
                     self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
-                client = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
-                if self.checkResolve(client) is False and self.checkResolve(client+"v6") is True:
-                    print("Switching",client,"to v6 only")
+                if self.checkResolve(clientName) is False and self.checkResolve(clientName+"v6") is True:
+                    print("Switching",clientName,"to v6 only")
                     suffix ="v6"
                 else:
                     suffix = ""
-                print("Stopping",self.targets['prefix']+server+v6,"on",client+suffix)
-                if threading and client not in ignorelist:
-                    threads.append(Thread(target=self.cmd, args=([client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
-                elif client not in ignorelist:
-                    self.cmd(client+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
-                if delete == True and client not in ignorelist:
-                    self.cmd(client+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
+                print("Stopping",self.targets['prefix']+server+v6,"on",clientName+suffix)
+                if threading and clientName not in ignorelist:
+                    threads.append(Thread(target=self.cmd, args=([clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
+                elif clientName not in ignorelist:
+                    self.cmd(clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
+                if delete == True and clientName not in ignorelist or clean == True and clientName not in ignorelist and server in ignorelist:
+                    self.cmd(clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
         if threading: self.lunchThreads(threads)
 
     def clean(self):
@@ -90,7 +90,10 @@ class Pipe:
                 print("Switching",server,"to v6 only")
                 suffix = "v6"
             nics = self.cmd(server+suffix,'ip addr show')[0]
-            print(nics)
+            if self.targets['prefix'] in nics:
+                print("connections detected")
+            else:
+                print("no connections detected")
 
     def shutdown(self):
         threads = []
@@ -151,9 +154,12 @@ class Pipe:
         print('Done',client,'on',server)
 
     def run(self):
-        threading,start = False,4
+        threading,cleanList,start = False,[],4
         crossConnect,clients,threads = [],[],[]
         answer = input("Use Threading? (y/n): ")
+        clean = input("Any nodes to ignore and remove? (Name,Name../n): ")
+        if clean != "n":
+            cleanList = clean.split(",")
         if answer == "y": threading = True
         print("Launching")
         time.sleep(3)
@@ -163,7 +169,7 @@ class Pipe:
                 self.targets['servers'][server]['basePort'] = port = random.randint(1500, 55000)
             else:
                 port = data['basePort']
-            self.prepare(server,threading)
+            self.prepare(server,threading,True,False,cleanList,bool(cleanList))
             print("---",server,"Deploying","---")
             #Check if v6 only
             v6only,suffix = False,""
