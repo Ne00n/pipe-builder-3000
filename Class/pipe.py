@@ -105,10 +105,10 @@ class Pipe:
                 threads.append(Thread(target=self.prepare, args=([server,False])))
         if answer == "y": self.lunchThreads(threads)
 
-    def lunchThreads(self,threads):
+    def lunchThreads(self,threads,rate=0.2):
         for thread in threads:
             thread.start()
-            time.sleep(0.2)
+            time.sleep(rate)
         for thread in threads:
             thread.join()
 
@@ -169,8 +169,13 @@ class Pipe:
                 self.targets['servers'][server]['basePort'] = port = random.randint(1500, 55000)
             else:
                 port = data['basePort']
+            if "rate" in self.targets['servers'][server]:
+                rate = self.targets['servers'][server]['rate']
+            else:
+                rate = 0.2
             self.prepare(server,threading,True,False,cleanList,bool(cleanList))
             print("---",server,"Deploying","---")
+            print(server,"Using rate",rate)
             #Check if v6 only
             v6only,suffix = False,""
             if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
@@ -226,6 +231,6 @@ class Pipe:
                     self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
                 else:
                     threads.append(Thread(target=self.execute, args=([clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True])))
-            if answer == "y": self.lunchThreads(threads)
+            if answer == "y": self.lunchThreads(threads,rate)
             #Reset stuff
             threads,start = [],4
