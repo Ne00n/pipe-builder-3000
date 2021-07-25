@@ -15,3 +15,5 @@ elif sys.argv[1] == "clean":
     pipe.clean()
 elif sys.argv[1] == "check":
     pipe.check()
+elif sys.argv[1] == "reboot":
+    pipe.reboot()

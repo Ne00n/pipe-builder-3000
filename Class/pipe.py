@@ -95,6 +95,18 @@ class Pipe:
             else:
                 print("no connections detected")
 
+    def reboot(self):
+        print("WARNING, this is going to reboot all machines!")
+        answer = input("Continue? (y/n): ")
+        if answer == "y":
+            for server,data in self.targets['servers'].items():
+                print("---",server,"Rebooting","---")
+                suffix = ""
+                if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
+                    print("Switching",server,"to v6 only")
+                    suffix = "v6"
+                self.cmd(server+suffix,'reboot')
+
     def shutdown(self):
         threads = []
         answer = input("Use Threading? (y/n): ")
