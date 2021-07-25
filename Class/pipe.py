@@ -46,9 +46,9 @@ class Pipe:
                 #Stop Server
                 clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
                 print("Stopping",client.replace("Serv",""),"on",server)
-                if threading and clientName not in ignorelist:
+                if threading:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
-                elif clientName not in ignorelist:
+                else:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True and clientName not in ignorelist or clean == True and clientName in ignorelist:
                     self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
