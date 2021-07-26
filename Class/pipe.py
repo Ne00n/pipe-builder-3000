@@ -127,6 +127,11 @@ class Pipe:
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets['servers'] else True
 
+    def increaseDis(self,start,port):
+        start +=2
+        port +=1
+        return start,port
+
     def execute(self,clients,data,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         v6only = False
         #Templator
@@ -203,43 +208,40 @@ class Pipe:
                     execute = False
                     print("cross-connect™")
                     for target in self.targets['servers']:
-                        #Prevent v4 connections to v6 only hosts
-                        if self.checkResolve(target) is False and self.checkResolve(target+"v6") is True: continue
-                        if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True: continue
+                        v6 = False
+                        if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
                         #Prevent double connections
                         if target not in crossConnect:
                             if answer != "y":
                                 self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                                start,port = self.increaseDis(start,port)
+                                if v6:
+                                    self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                    start,port = self.increaseDis(start,port)
                             else:
                                 threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
-                            execute = True
-                            start +=2
-                            port +=1
-                    if data['v6'] == True:
-                        print("cross-connectv6™")
-                        for target,row in self.targets['servers'].items():
-                            #Prevent double connections & v4 peers
-                            if target not in crossConnect and row['v6'] == True:
-                                if answer != "y":
-                                    self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
-                                else:
+                                start,port = self.increaseDis(start,port)
+                                if v6:
                                     threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
-                                execute = True
-                                start +=2
-                                port +=1
+                                    start,port = self.increaseDis(start,port)
+                            execute = True
                 else:
                     v6 = False
                     if self.checkResolve(server+"v6") and self.checkResolve(client+"v6"): v6 = True
                     print("direct-connectv4|v6™")
                     if answer != "y":
                         self.execute(clients,data,start,port,client,server,privateServer,publicServer)
-                        if v6: self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
+                        start,port = self.increaseDis(start,port)
+                        if v6:
+                            self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
+                            start,port = self.increaseDis(start,port)
                     else:
                         threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
-                        if v6: threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
+                        start,port = self.increaseDis(start,port)
+                        if v6:
+                            threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
+                            start,port = self.increaseDis(start,port)
                     execute = True
-                    start +=2
-                    port +=1
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
