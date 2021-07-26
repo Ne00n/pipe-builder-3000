@@ -228,11 +228,15 @@ class Pipe:
                                 start +=2
                                 port +=1
                 else:
-                    print("direct-connect™")
+                    v6 = False
+                    if self.checkResolve(server+"v6") and self.checkResolve(client+"v6"): v6 = True
+                    print("direct-connectv4|v6™")
                     if answer != "y":
                         self.execute(clients,data,start,port,client,server,privateServer,publicServer)
+                        if v6: self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
                     else:
                         threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
+                        if v6: threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
                     execute = True
                     start +=2
                     port +=1

@@ -44,7 +44,6 @@ point-to-point<br />
 ```
 
 cross-connect (mesh)<br />
-Currently only mesh has IPv6 support<br />
 ```
 "Server1":{"id":1,"basePort":51194,"type":"native","v6":true,"Targets":["*"]},
 "Server2":{"id":2,"basePort":51194,"type":"native","v6":true,"Targets":["*"]},
