@@ -206,7 +206,7 @@ class Pipe:
                 if client == "*":
                     crossConnect.append(server)
                     execute = False
-                    print("cross-connect™")
+                    print("cross-connectv4|v6™")
                     for target in self.targets['servers']:
                         v6 = False
                         if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
