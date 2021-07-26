@@ -207,7 +207,10 @@ class Pipe:
                     crossConnect.append(server)
                     execute = False
                     print("cross-connectv4|v6™")
-                    for target in self.targets['servers']:
+                    for target,targetData in self.targets['servers'].items():
+                        if "*" not in targetData['Targets'] and server not in targetData['Targets']:
+                            print("Skipping",target,"since no crossConnect")
+                            continue
                         v6 = False
                         if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
                         #Prevent double connections
