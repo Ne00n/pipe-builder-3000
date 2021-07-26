@@ -46,7 +46,7 @@ point-to-point<br />
 cross-connect (mesh)<br />
 ```
 "Server1":{"id":1,"basePort":51194,"type":"native","Targets":["*"]},
-"Server2":{"id":2,"basePort":51194,"type":"native","Targets":["*"]},
+"Server2":{"id":2,"basePort":"random","type":"native","Targets":["*"]},
 "Server3":{"id":3,"basePort":51194,"type":"native","Targets":["*"]}
 ```
 
@@ -54,7 +54,7 @@ cross-connect + point-to-point<br />
 ```
 "Server1":{"id":1,"basePort":51194,"type":"native","Targets":["*"]},
 "Server2":{"id":2,"basePort":51194,"type":"native","Targets":["*","Server5"]},
-"Server3":{"id":3,"basePort":51194,"type":"native","Targets":["*","Server4"]}
+"Server3":{"id":3,"basePort":"random","type":"native","Targets":["*","Server4"]}
 ```
 
 /etc/hosts<br />
