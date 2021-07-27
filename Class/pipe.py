@@ -214,22 +214,23 @@ class Pipe:
                         v6 = False
                         if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
                         #Prevent double connections
-                        if target not in crossConnect:
-                            if answer != "y":
-                                self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                        if target in crossConnect: continue
+                        if answer != "y":
+                            self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                            start,port = self.increaseDis(start,port)
+                            if v6:
+                                self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
                                 start,port = self.increaseDis(start,port)
-                                if v6:
-                                    self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
-                                    start,port = self.increaseDis(start,port)
-                            else:
-                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
+                        else:
+                            threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
+                            start,port = self.increaseDis(start,port)
+                            if v6:
+                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
                                 start,port = self.increaseDis(start,port)
-                                if v6:
-                                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
-                                    start,port = self.increaseDis(start,port)
-                            execute = True
+                        execute = True
                 else:
                     v6 = False
+                    if client in crossConnect: continue
                     if self.checkResolve(server+"v6") and self.checkResolve(client+"v6"): v6 = True
                     print("direct-connectv4|v6™")
                     if answer != "y":
