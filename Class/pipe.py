@@ -259,6 +259,10 @@ class Pipe:
                     self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
                 else:
                     threads.append(Thread(target=self.execute, args=([clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True])))
-            if answer == "y": self.lunchThreads(threads,rate)
+            if answer == "y":
+                if rate == 0.2 and len(threads) > 4:
+                    rate = len(threads) * 0.05
+                    print(server,"Updated rate",rate)
+                self.lunchThreads(threads,rate)
             #Reset stuff
             threads,start = [],4
