@@ -31,7 +31,7 @@ class Pipe:
     def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False):
         print("---",server,"Preparing","---")
         #Check if v6 only
-        serverSuffix,threads = "",[]
+        serverSuffix,threads,files = "",[],[]
         if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
             print("Switching",server,"to v6 only")
             serverSuffix ="v6"
@@ -51,7 +51,10 @@ class Pipe:
                 else:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True and clientName not in ignorelist or clean == True and clientName in ignorelist:
-                    self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+".conf")
+                    if threading:
+                        files.append(Thread(target=self.cmd, args=([server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf'])))
+                    else:
+                        self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf')
                 #Stop Client
                 v6 = 'v6' if client.endswith("v6Serv") else ''
                 if self.checkResolve(clientName) is False and self.checkResolve(clientName+"v6") is True:
@@ -65,8 +68,13 @@ class Pipe:
                 elif clientName not in ignorelist:
                     self.cmd(clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
                 if delete == True and clientName not in ignorelist or clean == True and clientName not in ignorelist and server in ignorelist:
-                    self.cmd(clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+".conf")
-        if threading: self.lunchThreads(threads)
+                    if threading:
+                        files.append(Thread(target=self.cmd, args=([clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf'])))
+                    else:
+                        self.cmd(clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf')
+        if threading:
+            self.lunchThreads(threads)
+            self.lunchThreads(files)
 
     def clean(self):
         threads,ignoreList = [],[]
@@ -118,11 +126,12 @@ class Pipe:
         if answer == "y": self.lunchThreads(threads)
 
     def lunchThreads(self,threads,rate=0.2):
-        for thread in threads:
-            thread.start()
-            time.sleep(rate)
-        for thread in threads:
-            thread.join()
+        if threads:
+            for thread in threads:
+                thread.start()
+                time.sleep(rate)
+            for thread in threads:
+                thread.join()
 
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets['servers'] else True
