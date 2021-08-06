@@ -28,7 +28,7 @@ class Pipe:
         if not ip: return False
         return True
 
-    def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False):
+    def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False,reconfigure=[]):
         print("---",server,"Preparing","---")
         #Check if v6 only
         serverSuffix,threads,files = "",[],[]
@@ -45,12 +45,15 @@ class Pipe:
             if client.endswith("Serv") and Filter == True or Filter == False:
                 #Stop Server
                 clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
+                #Reconfigure
+                if reconfigure[0] != "" and (clientName not in reconfigure and server not in reconfigure): continue
                 print("Stopping",client.replace("Serv",""),"on",server)
                 if threading:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
                 else:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True and clientName not in ignorelist or clean == True and clientName in ignorelist:
+                    print("Deleting",client.replace("Serv",""),"on",server)
                     if threading:
                         files.append(Thread(target=self.cmd, args=([server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf'])))
                     else:
@@ -68,6 +71,7 @@ class Pipe:
                 elif clientName not in ignorelist:
                     self.cmd(clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
                 if delete == True and clientName not in ignorelist or clean == True and clientName not in ignorelist and server in ignorelist:
+                    print("Deleting",self.targets['prefix']+server+v6,"on",clientName+suffix)
                     if threading:
                         files.append(Thread(target=self.cmd, args=([clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf'])))
                     else:
@@ -183,9 +187,10 @@ class Pipe:
         threading,cleanList,start = False,[],4
         crossConnect,clients,threads = [],[],[]
         answer = input("Use Threading? (y/n): ")
-        clean = input("Any nodes to ignore and remove? (Name,Name../n): ")
-        if clean != "n":
-            cleanList = clean.split(",")
+        clean = input("Any servers to ignore and remove? (Name,Name../n): ")
+        reconfigure = input("Reconfigure any servers? (Name,Name../n): ")
+        clean = clean.split(",")
+        reconfigure = reconfigure.split(",")
         if answer == "y": threading = True
         print("Launching")
         time.sleep(3)
@@ -199,7 +204,7 @@ class Pipe:
                 rate = self.targets['servers'][server]['rate']
             else:
                 rate = 0.2
-            self.prepare(server,threading,True,False,cleanList,bool(cleanList))
+            self.prepare(server,threading,True,False,clean,bool(clean),reconfigure)
             print("---",server,"Deploying","---")
             print(server,"Using rate",rate)
             #Check if v6 only
@@ -225,19 +230,24 @@ class Pipe:
                         if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
                         #Prevent double connections
                         if target in crossConnect: continue
+                        #Threading
                         if answer != "y":
                             if v4:
-                                self.execute(clients,data,start,port,target,server,privateServer,publicServer)
+                                if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
+                                    self.execute(clients,data,start,port,target,server,privateServer,publicServer)
                                 start,port = self.increaseDis(start,port)
                             if v6:
-                                self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
+                                if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
+                                    self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
                                 start,port = self.increaseDis(start,port)
                         else:
                             if v4:
-                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
+                                if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
+                                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
                                 start,port = self.increaseDis(start,port)
                             if v6:
-                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
+                                if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
+                                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
                                 start,port = self.increaseDis(start,port)
                         execute = True
                 else:
@@ -246,19 +256,24 @@ class Pipe:
                     if self.checkResolve(server) and self.checkResolve(client): v4 = True
                     if self.checkResolve(server+"v6") and self.checkResolve(client+"v6"): v6 = True
                     print("direct-connectv4|v6™")
+                    #Threading
                     if answer != "y":
                         if v4:
-                            self.execute(clients,data,start,port,client,server,privateServer,publicServer)
+                            if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
+                                self.execute(clients,data,start,port,client,server,privateServer,publicServer)
                             start,port = self.increaseDis(start,port)
                         if v6:
-                            self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
+                            if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
+                                self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
                             start,port = self.increaseDis(start,port)
                     else:
                         if v4:
-                            threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
+                            if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
+                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
                             start,port = self.increaseDis(start,port)
                         if v6:
-                            threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
+                            if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
+                                threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
                             start,port = self.increaseDis(start,port)
                     execute = True
             #Check if target has any wg configuration
