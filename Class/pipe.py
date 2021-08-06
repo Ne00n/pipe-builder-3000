@@ -271,6 +271,7 @@ class Pipe:
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
+                    if rate > 2: rate = 2
                     print(server,"Updated rate",rate)
                 self.lunchThreads(threads,rate)
             #Reset stuff
