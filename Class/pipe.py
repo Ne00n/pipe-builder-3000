@@ -186,9 +186,9 @@ class Pipe:
     def run(self):
         threading,cleanList,start = False,[],4
         crossConnect,clients,threads = [],[],[]
-        answer = input("Use Threading? (y/n): ")
-        clean = input("Any servers to ignore and remove? (Name,Name../n): ")
-        reconfigure = input("Reconfigure any servers? (Name,Name../n): ")
+        answer = input("Use Threading? (y/enter): ")
+        clean = input("Any servers to ignore and remove? (Name,Name../enter): ")
+        reconfigure = input("Reconfigure any servers? (Name,Name../enter): ")
         clean = clean.split(",")
         reconfigure = reconfigure.split(",")
         if answer == "y": threading = True
