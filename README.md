@@ -84,3 +84,4 @@ Removes all Wireguard prefix* configuration files<br />
 ```
 python3 pipe.py clean
 ```
+- Same as above, you can ignore servers, which are offline, to make things faster
