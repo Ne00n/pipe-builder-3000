@@ -74,7 +74,7 @@ python3 pipe.py build
 - Threading can be enabled, to make stuff run faster, however harder to debug<br />
 - Reconfigure can be used to update a server IP or just randomize the wg ports of that server, without impacting the entire network<br />
 Don't use that function to enable IPv6 afterwards<br />
-- You can ignore and remove old servers while doing a build, remove them from the .json before you use it<br /><br />
+- You can ignore and remove old servers while doing a build, remove them from the .json before you use it<br />
 
 Shutdown of all Wireguard prefix* connections<br />
 ```
