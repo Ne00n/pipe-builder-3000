@@ -75,11 +75,12 @@ python3 pipe.py build
 - Reconfigure can be used to update a server IP or just randomize the wg ports of that server, without impacting the entire network<br />
 Don't use that function to enable IPv6 afterwards<br />
 - You can ignore and remove old servers while doing a build, remove them from the .json before you use it<br /><br />
-Shutdown of all Wireguard pipe* connections<br />
+
+Shutdown of all Wireguard prefix* connections<br />
 ```
 python3 pipe.py shutdown
 ```
-Removes all Wireguard pipe* configuration files<br />
+Removes all Wireguard prefix* configuration files<br />
 ```
 python3 pipe.py clean
 ```
