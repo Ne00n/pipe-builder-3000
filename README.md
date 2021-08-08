@@ -65,7 +65,6 @@ bla.bla.bla.bla    Server3
 bla:bla:bacon::bla Server3v6
 ```
 Note: No need for dualstack, IPv6 only is supported</br >
-However, if you use IPv6, you need IPv6 connectivity.
 
 **Usage**<br />
 Builds or Updates the network<br />
