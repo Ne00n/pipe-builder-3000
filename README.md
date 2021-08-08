@@ -64,7 +64,7 @@ bla:bla:beef::bla  Server2v6
 bla.bla.bla.bla    Server3
 bla:bla:bacon::bla Server3v6
 ```
-Note: No need for dualstack, IPv6 only is supported</br >
+Note: No need for dualstack, IPv4 or IPv6 only is supported</br >
 
 **Usage**<br />
 Builds or Updates the network<br />
