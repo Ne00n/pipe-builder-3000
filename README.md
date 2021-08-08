@@ -33,8 +33,6 @@ apt-get update && apt-get install wireguard python3 -y
 Rename hosts.example.json to hosts.json and fill it up<br />
 You can use * if you want to cross-connect to everything else<br />
 
-If you updated pipe-builder you may run pipe.py clean since we renamed the Server files.<br />
-
 **Examples**<br />
 
 point-to-point<br />
@@ -66,19 +64,24 @@ bla:bla:beef::bla  Server2v6
 bla.bla.bla.bla    Server3
 bla:bla:bacon::bla Server3v6
 ```
-Note: No need for dualstack, IPv6 only is supported</br >
-However, if you use IPv6, you need IPv6 connectivity.
+Note: No need for dualstack, IPv4 or IPv6 only is supported</br >
 
 **Usage**<br />
 Builds or Updates the network<br />
 ```
 python3 pipe.py build
 ```
-Shutdown of all Wireguard pipe* connections<br />
+- Threading can be enabled, to make stuff run faster, however harder to debug<br />
+- Reconfigure can be used to update a server IP or just randomize the wg ports of that server, without impacting the entire network<br />
+Don't use that function to enable IPv6 afterwards<br />
+- You can ignore and remove old servers while doing a build, remove them from the .json before you use it<br />
+
+Shutdown of all Wireguard prefix* connections<br />
 ```
 python3 pipe.py shutdown
 ```
-Removes all Wireguard pipe* configuration files<br />
+Removes all Wireguard prefix* configuration files<br />
 ```
 python3 pipe.py clean
 ```
+- Same as above, you can ignore servers, which are offline, to make things faster
