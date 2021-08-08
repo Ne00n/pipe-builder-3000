@@ -33,8 +33,6 @@ apt-get update && apt-get install wireguard python3 -y
 Rename hosts.example.json to hosts.json and fill it up<br />
 You can use * if you want to cross-connect to everything else<br />
 
-If you updated pipe-builder you may run pipe.py clean since we renamed the Server files.<br />
-
 **Examples**<br />
 
 point-to-point<br />
