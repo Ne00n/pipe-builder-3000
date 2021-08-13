@@ -41,12 +41,12 @@ class Pipe:
         parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
         #Disable old configs
         for client in parsed:
+            clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
             #Only shutdown connections the server is in charge
-            if client.endswith("Serv") and Filter == True or Filter == False:
-                #Stop Server
-                clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
+            if client.endswith("Serv") and Filter == True or Filter == False or clean == True and clientName in ignorelist:
                 #Reconfigure
                 if reconfigure[0] != "" and (clientName not in reconfigure and server not in reconfigure): continue
+                #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
                 if threading:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
@@ -191,6 +191,8 @@ class Pipe:
         reconfigure = input("Reconfigure any servers? (Name,Name../enter): ")
         clean = clean.split(",")
         reconfigure = reconfigure.split(",")
+        if reconfigure[0] != "":
+            reconfigure.append("dummy")
         if answer == "y": threading = True
         print("Launching")
         time.sleep(3)
@@ -280,9 +282,9 @@ class Pipe:
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
                 if answer != "y":
-                    self.execute(clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,data,start,port,"dummy",server+suffix,privateServer,publicServer,False,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,server+suffix,server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,"dummy",server+suffix,privateServer,publicServer,False,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
