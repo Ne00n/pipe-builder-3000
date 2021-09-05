@@ -65,6 +65,9 @@ class Pipe:
                     suffix ="v6"
                 else:
                     suffix = ""
+                    if clientName == "dummy":
+                        print("Skipping",client)
+                        continue
                 print("Stopping",self.targets['prefix']+server+v6,"on",clientName+suffix)
                 if threading and clientName not in ignorelist:
                     threads.append(Thread(target=self.cmd, args=([clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
@@ -162,6 +165,7 @@ class Pipe:
             serviceConfig = T.genBoringtun()
             self.cmd(server,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf')
         #Put Server config & Start
+        if dummy is True: client = "dummy"
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv')
         if dummy is True: return True
@@ -282,9 +286,9 @@ class Pipe:
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
                 if answer != "y":
-                    self.execute(clients,data,start,port,"dummy",server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,data,start,port,target,server+suffix,privateServer,publicServer,False,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,"dummy",server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server+suffix,privateServer,publicServer,False,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
