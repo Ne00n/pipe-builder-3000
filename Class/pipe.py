@@ -45,7 +45,7 @@ class Pipe:
             #Only shutdown connections the server is in charge
             if client.endswith("Serv") and Filter == True or Filter == False or clean == True and clientName in ignorelist:
                 #Reconfigure
-                if reconfigure[0] != "" and (clientName not in reconfigure and server not in reconfigure): continue
+                if reconfigure and reconfigure[0] != "" and (clientName not in reconfigure and server not in reconfigure): continue
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
                 if threading:
