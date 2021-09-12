@@ -52,7 +52,7 @@ class Pipe:
                     threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
                 else:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
-                if delete == True and clientName not in ignorelist or clean == True and clientName in ignorelist:
+                if delete == True or clean == True and clientName in ignorelist:
                     print("Deleting",client.replace("Serv",""),"on",server)
                     if threading:
                         files.append(Thread(target=self.cmd, args=([server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf'])))
