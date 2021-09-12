@@ -110,6 +110,22 @@ class Pipe:
             else:
                 print("no connections detected")
 
+    def match(self):
+        serverSuffix = ""
+        for server,data in self.targets['servers'].items():
+            print("---",server,"Checking","---")
+            if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
+                print("Switching",server,"to v6 only")
+                serverSuffix ="v6"
+            configs = self.cmd(server+serverSuffix,'ls /etc/wireguard/')[0]
+            #Parse configs
+            parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
+            #Disable old configs
+            for client in parsed:
+                clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
+                if clientName not in self.targets['servers']:
+                    print("Could not find",clientName,"in servers")
+
     def reboot(self):
         print("WARNING, this is going to reboot all machines!")
         answer = input("Continue? (y/n): ")
