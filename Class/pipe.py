@@ -16,12 +16,12 @@ class Pipe:
                 if p.returncode != 0:
                     print("Warning got returncode",p.returncode,"on",server)
                     print("Error:",p.stderr.decode('utf-8'))
-                if p.returncode != 255: break
+                if p.returncode != 255: return [p.stdout.decode('utf-8'),p.stderr.decode('utf-8')]
             except Exception as e:
                 print("Error:",e)
             print("Retrying",cmd,"on",server)
             time.sleep(random.randint(5, 15))
-        return [p.stdout.decode('utf-8'),p.stderr.decode('utf-8')]
+        return ["failed","failed"]
 
     def checkResolve(self,server):
         ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
