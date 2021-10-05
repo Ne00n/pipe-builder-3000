@@ -168,10 +168,9 @@ class Pipe:
         v6only = False
         #Templator
         T = Templator()
-        #Generate Client private key
-        privateClient = self.cmd(client,'wg genkey')[0]
-        #Generate Client public key
-        publicClient = self.cmd(client,'echo "'+privateClient+'" | wg pubkey')[0]
+        #Generate Client and Public key
+        keys = self.cmd(client,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
+        privateClient, publicClient = keys.splitlines()
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Generate Server config
@@ -234,10 +233,9 @@ class Pipe:
             if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
                 print("Switching",server,"to v6 only")
                 v6only,suffix = True,"v6"
-            #Generate Server private key
-            privateServer = self.cmd(server+suffix,'wg genkey')[0]
-            #Generate Server public key
-            publicServer = self.cmd(server+suffix,'echo "'+privateServer+'" | wg pubkey')[0]
+            #Generate Server keys
+            keys = self.cmd(server+suffix,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
+            privateServer, publicServer = keys.splitlines()
             for client in data['Targets']:
                 if client == "*":
                     crossConnect.append(server)
