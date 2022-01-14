@@ -189,7 +189,7 @@ class Pipe:
         ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Client config
         clientIP = False
-        if self.isClient(client) and client not in clients:
+        if self.isClient(client) and client.replace("v6","") not in clients:
             clients.append(client)
             clientIP = True
         clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),data['id'],start,port,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
