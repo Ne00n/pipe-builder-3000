@@ -28,6 +28,18 @@ class Pipe:
         if not ip: return False
         return True
 
+    def preflight(self):
+        print("Pre-flight")
+        ips = []
+        for server,data in self.targets['servers'].items():
+            v4 = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
+            v6 = subprocess.check_output(['dig','ANY','+short',f"{server}v6"]).decode("utf-8")
+            if not v4 and not v6: exit(f"Could not resolve {server}")
+            if not data['id'] in ips:
+                ips.append(data['id'])
+            else:
+                exit(f"id collision on {data['id']}")
+
     def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False,reconfigure=[]):
         print("---",server,"Preparing","---")
         #Check if v6 only
@@ -213,6 +225,7 @@ class Pipe:
         if reconfigure[0] != "":
             reconfigure.append("dummy")
         if answer == "y": threading = True
+        self.preflight()
         print("Launching")
         time.sleep(3)
         for server,data in self.targets['servers'].items():
