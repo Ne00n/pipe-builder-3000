@@ -8,9 +8,9 @@ class Pipe:
         with open(config) as handle:
             self.targets = json.loads(handle.read())
 
-    def cmd(self,server,command):
+    def cmd(self,server,command,runs=4):
         cmd = ['ssh','root@'+server,command]
-        for run in range(4):
+        for run in range(runs):
             try:
                 p = subprocess.run(cmd, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
                 if p.returncode != 0:
@@ -30,15 +30,23 @@ class Pipe:
 
     def preflight(self):
         print("Pre-flight")
-        ips = []
+        names,ips = [],[]
         for server,data in self.targets['servers'].items():
+            print(f"Checking {server}")
             v4 = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
             v6 = subprocess.check_output(['dig','ANY','+short',f"{server}v6"]).decode("utf-8")
             if not v4 and not v6: exit(f"Could not resolve {server}")
-            if not data['id'] in ips:
-                ips.append(data['id'])
-            else:
-                exit(f"id collision on {data['id']}")
+            if v4:
+                wg = self.cmd(server,'wg',1)[0]
+                if "interface" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}")
+            if v6:
+                wg = self.cmd(f"{server}v6",'wg',1)[0]
+                if "interface" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}v6")
+            if server in names: exit(f"name collision on {server}")
+            if data['id'] in ips: exit(f"id collision on {data['id']}")
+            names.append(server)
+            ips.append(data['id'])
+        input("Pre-flight done, press any key to launch")
 
     def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False,reconfigure=[]):
         print("---",server,"Preparing","---")
