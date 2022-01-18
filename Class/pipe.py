@@ -37,11 +37,11 @@ class Pipe:
             v6 = subprocess.check_output(['dig','ANY','+short',f"{server}v6"]).decode("utf-8")
             if not v4 and not v6: exit(f"Could not resolve {server}")
             if v4:
-                wg = self.cmd(server,'wg',1)[0]
-                if "interface" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}")
+                wg = self.cmd(server,'wg help',1)[0]
+                if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}")
             if v6:
-                wg = self.cmd(f"{server}v6",'wg',1)[0]
-                if "interface" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}v6")
+                wg = self.cmd(f"{server}v6",'wg help',1)[0]
+                if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}v6")
             if server in names: exit(f"name collision on {server}")
             if data['id'] in ips: exit(f"id collision on {data['id']}")
             names.append(server)
