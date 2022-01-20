@@ -193,8 +193,11 @@ class Pipe:
         privateClient, publicClient = keys.splitlines()
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
+        #Resolve hostname
+        ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
+        ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],data,start,port,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
+        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),data,start,port,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
         #Type Check
         if data['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -204,9 +207,6 @@ class Pipe:
         print('Creating & Starting',client,'on',server)
         self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv')
         if dummy is True: return True
-        #Resolve hostname
-        ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
-        ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Client config
         clientIP = False
         if self.isClient(client) and client.replace("v6","") not in clients:
