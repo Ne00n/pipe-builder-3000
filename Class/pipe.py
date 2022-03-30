@@ -223,7 +223,7 @@ class Pipe:
         print('Done',client,'on',server)
 
     def run(self):
-        threading,cleanList,start = False,[],4
+        threading,cleanList,start = False,[],50
         crossConnect,clients,threads = [],[],[]
         answer = input("Use Threading? (y/enter): ")
         clean = input("Any servers to ignore and remove? (Name,Name../enter): ")
@@ -331,4 +331,4 @@ class Pipe:
                     print(server,"Updated rate",rate)
                 self.lunchThreads(threads,rate)
             #Reset stuff
-            threads,start = [],4
+            threads,start = [],50
