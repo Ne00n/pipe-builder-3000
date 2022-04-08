@@ -23,8 +23,11 @@ class Pipe:
             time.sleep(random.randint(5, 15))
         return ["failed","failed"]
 
+    def resolveHostname(self,hostname):
+        return subprocess.check_output(['dig','ANY','+short',hostname]).decode("utf-8")
+
     def checkResolve(self,server):
-        ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
+        ip = self.resolveHostname(server)
         if not ip: return False
         return True
 
@@ -33,8 +36,8 @@ class Pipe:
         names,ips = [],[]
         for server,data in self.targets['servers'].items():
             print(f"Checking {server}")
-            v4 = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
-            v6 = subprocess.check_output(['dig','ANY','+short',f"{server}v6"]).decode("utf-8")
+            v4 = self.resolveHostname(server)
+            v6 = self.resolveHostname(f"{server}v6")
             if not v4 and not v6: exit(f"Could not resolve {server}")
             if v4:
                 wg = self.cmd(server,'wg help',2)[0]
@@ -184,6 +187,13 @@ class Pipe:
         port +=1
         return start,port
 
+    def average(self,result):
+        parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
+        total = 0
+        for ip,ms,loss in parsed:
+            total += float(ms)
+        return total / len(parsed)
+
     def execute(self,clients,data,start,port,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         v6only = False
         #Templator
@@ -194,7 +204,7 @@ class Pipe:
         #Check if we are on v6 only
         if self.checkResolve(server.replace("v6","")) is False: v6only = True
         #Resolve hostname
-        ip = subprocess.check_output(['dig','ANY','+short',server]).decode("utf-8")
+        ip = self.resolveHostname(server)
         ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Server config
         serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),data,start,port,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
@@ -258,19 +268,38 @@ class Pipe:
             keys = self.cmd(server+suffix,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
             privateServer, publicServer = keys.splitlines()
             for client in data['Targets']:
-                if client == "*":
+                if client == "*" or client == "geo":
                     crossConnect.append(server)
                     execute = False
                     print("cross-connectv4|v6™")
                     for target,targetData in self.targets['servers'].items():
-                        if "*" not in targetData['Targets'] and server not in targetData['Targets']:
+                        if "*" not in targetData['Targets'] and "geo" not in targetData['Targets'] and server not in targetData['Targets']:
                             print("Skipping",target,"since no crossConnect")
                             continue
+                        #Prevent double connections
+                        if target in crossConnect: continue
+                        #Resolve
                         v4,v6 = False,False
                         if self.checkResolve(server) and self.checkResolve(target): v4 = True
                         if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
-                        #Prevent double connections
-                        if target in crossConnect: continue
+                        #Geo
+                        if "geo" in targetData['Targets'] or "geo" in data['Targets']:
+                            if v4: 
+                                targetv4 = self.resolveHostname(target)
+                                print(f"Getting Latency for {target} for GEO")
+                                result = self.cmd(server,f'fping -c 3 {targetv4}')[0]
+                                latency = self.average(result)
+                                if latency > 200: 
+                                    print(f"Skipping link to {target} latency to high")
+                                    v4 = False
+                            if v6: 
+                                targetv6 = self.resolveHostname(f"{target}v6")
+                                print(f"Getting Latency for {target}v6 for GEO")
+                                result = self.cmd(f"{server}v6",f'fping -c 3 {targetv6}')[0]
+                                latency = self.average(result)
+                                if latency > 200: 
+                                    print(f"Skipping link to {target} latency to high")
+                                    v6 = False
                         #Threading
                         if answer != "y":
                             if v4:
