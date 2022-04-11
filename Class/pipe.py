@@ -182,10 +182,11 @@ class Pipe:
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets['servers'] else True
 
-    def increaseDis(self,start,port):
+    def increaseDis(self,execute,start,port):
+        execute = True
         start +=2
         port +=1
-        return start,port
+        return execute,start,port
 
     def average(self,result):
         parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
@@ -310,21 +311,20 @@ class Pipe:
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
                                     self.execute(clients,data,start,port,target,server,privateServer,publicServer)
-                                start,port = self.increaseDis(start,port)
+                                execute,start,port = self.increaseDis(execute,start,port)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
                                     self.execute(clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True)
-                                start,port = self.increaseDis(start,port)
+                                execute,start,port = self.increaseDis(execute,start,port)
                         else:
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
                                     threads.append(Thread(target=self.execute, args=([clients,data,start,port,target,server,privateServer,publicServer])))
-                                start,port = self.increaseDis(start,port)
+                                execute,start,port = self.increaseDis(execute,start,port)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
                                     threads.append(Thread(target=self.execute, args=([clients,data,start,port,target+"v6",server+"v6",privateServer,publicServer,True])))
-                                start,port = self.increaseDis(start,port)
-                        execute = True
+                                execute,start,port = self.increaseDis(execute,start,port)
                 else:
                     v4,v6 = False,False
                     if client in crossConnect: continue
@@ -336,21 +336,20 @@ class Pipe:
                         if v4:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 self.execute(clients,data,start,port,client,server,privateServer,publicServer)
-                            start,port = self.increaseDis(start,port)
+                            execute,start,port = self.increaseDis(execute,start,port)
                         if v6:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 self.execute(clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True)
-                            start,port = self.increaseDis(start,port)
+                            execute,start,port = self.increaseDis(execute,start,port)
                     else:
                         if v4:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 threads.append(Thread(target=self.execute, args=([clients,data,start,port,client,server,privateServer,publicServer])))
-                            start,port = self.increaseDis(start,port)
+                            execute,start,port = self.increaseDis(execute,start,port)
                         if v6:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 threads.append(Thread(target=self.execute, args=([clients,data,start,port,client+"v6",server+"v6",privateServer,publicServer,True])))
-                            start,port = self.increaseDis(start,port)
-                    execute = True
+                            execute,start,port = self.increaseDis(execute,start,port)
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
