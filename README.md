@@ -7,12 +7,10 @@ Wireguard needs to be already installed on all servers<br />
 Its recommended to run this on clean servers.<br />
 By default 10.0.x.x/16 is used.<br />
 10.0.id.1 Node /30<br />
-10.0.id.50¹-255 peers /31<br />
+10.0.id.4-255 peers /31<br />
 10.0.250.1-255 clients /32<br />
 10.0.251.1-255 vxlan /32 <br />
 10.0.252.1-255 source based routing<br />
-
-¹Reserved for policy based routing<br>
 
 This script configures only the wireguard connections, to make everything reachable (mesh) there is an addon:<br />
 https://github.com/Ne00n/bird-spawner-3000
