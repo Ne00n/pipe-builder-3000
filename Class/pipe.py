@@ -61,7 +61,7 @@ class Pipe:
         #Fetch old configs
         configs = self.cmd(server+serverSuffix,'ls /etc/wireguard/')[0]
         #Parse configs
-        parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9]+",configs, re.MULTILINE)
+        parsed = re.findall("^"+self.targets['prefix']+"[A-Za-z0-9-]+",configs, re.MULTILINE)
         #Disable old configs
         for client in parsed:
             clientName = client.replace("Serv","").replace(self.targets['prefix'],"").replace("v6","")
