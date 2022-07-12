@@ -190,6 +190,7 @@ class Pipe:
 
     def average(self,result):
         parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
+        if not parsed: return 65000
         total = 0
         for ip,ms,loss in parsed:
             total += float(ms)
