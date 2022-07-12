@@ -29,12 +29,14 @@ class Templator:
             else:
                 template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
             if v6only is False and port == data['basePort']:
-                template += f"iptables -t nat -A POSTROUTING -s 10.0.0.0/16 ! -d 10.0.0.0/16 -j SNAT --to-source {ip};"
+                if data['type'] == "boringtun" or data['type'] == "container":
+                    template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
+                else:
+                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
             template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan'+str(targets['vxlanID'])+' up;'
             template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
             template += self.genVXLAN(servers,targets['vxlanID'])
             template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
-            template += f"iptables -t nat -D POSTROUTING -s 10.0.0.0/16 ! -d 10.0.0.0/16 -j SNAT --to-source {ip};"
         template += '''
         SaveConfig = true
         Table = off
