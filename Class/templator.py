@@ -33,7 +33,8 @@ class Templator:
                     template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                 else:
                     template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
-            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan'+str(targets['vxlanID'])+' up;'
+            template += f"ip link add vxlan{targets['vxlanID']} type vxlan id {targets['vxlanID']} dstport 4789 local 10.0.{data['id']}.1; ip link set vxlan{targets['vxlanID']} up;"
+            template += f"ME=`hostname`; ip link set dev vxlan{targets['vxlanID']} address `echo -n 02: ; echo -n $ME | md5sum | sed 's/\(..\)/\1:/g; s/.$//' | colrm 15`;"
             template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
             template += self.genVXLAN(servers,targets['vxlanID'])
             template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
