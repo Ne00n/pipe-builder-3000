@@ -35,7 +35,7 @@ class Templator:
                 if data['type'] == "boringtun" or data['type'] == "container":
                     template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                 else:
-                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
+                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
             template += f"ip link add vxlan{targets['vxlanID']} type vxlan id {targets['vxlanID']} dstport 4789 local 10.0.{data['id']}.1; ip link set vxlan{targets['vxlanID']} up;"
             template += f"ip link set dev vxlan{targets['vxlanID']} address {randomMac};"
             template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
