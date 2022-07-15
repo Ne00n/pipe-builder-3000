@@ -1,6 +1,7 @@
 import subprocess, random, time, json, re
 from Class.templator import Templator
 from threading import Thread
+import multiprocessing
 
 class Pipe:
     def __init__(self,config="hosts.json"):
@@ -22,6 +23,9 @@ class Pipe:
             print("Retrying",cmd,"on",server)
             time.sleep(random.randint(5, 15))
         return ["failed","failed"]
+
+    def listToCmd(self,task):
+        return self.cmd(task[0],task[1])
 
     def resolveHostname(self,hostname):
         return subprocess.check_output(['dig','ANY','+short',hostname]).decode("utf-8")
@@ -72,13 +76,13 @@ class Pipe:
                 #Stop Server
                 print("Stopping",client.replace("Serv",""),"on",server)
                 if threading:
-                    threads.append(Thread(target=self.cmd, args=([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])))
+                    threads.append([server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client])
                 else:
                     self.cmd(server+serverSuffix,'systemctl stop wg-quick@'+client+' && systemctl disable wg-quick@'+client)
                 if delete == True or clean == True and clientName in ignorelist:
                     print("Deleting",client.replace("Serv",""),"on",server)
                     if threading:
-                        files.append(Thread(target=self.cmd, args=([server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf'])))
+                        files.append([server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf'])
                     else:
                         self.cmd(server+serverSuffix,'rm -f /etc/wireguard/'+client+'.conf')
                 #Stop Client
@@ -93,18 +97,20 @@ class Pipe:
                         continue
                 print("Stopping",self.targets['prefix']+server+v6,"on",clientName+suffix)
                 if threading and clientName not in ignorelist:
-                    threads.append(Thread(target=self.cmd, args=([clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])))
+                    threads.append([clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])
                 elif clientName not in ignorelist:
                     self.cmd(clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6)
                 if delete == True and clientName not in ignorelist or clean == True and clientName not in ignorelist and server in ignorelist:
                     print("Deleting",self.targets['prefix']+server+v6,"on",clientName+suffix)
                     if threading:
-                        files.append(Thread(target=self.cmd, args=([clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf'])))
+                        files.append([clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf'])
                     else:
                         self.cmd(clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf')
         if threading:
-            self.lunchThreads(threads)
-            self.lunchThreads(files)
+            #shutdown the wireguards
+            self.lunchPool(threads)
+            #removing the wireguards
+            self.lunchPool(files)
 
     def clean(self):
         threads,ignoreList = [],[]
@@ -170,6 +176,12 @@ class Pipe:
             else:
                 threads.append(Thread(target=self.prepare, args=([server,False])))
         if answer == "y": self.lunchThreads(threads)
+
+    def lunchPool(self,tasks):
+        pool = multiprocessing.Pool(processes = 5)
+        results = pool.map(self.listToCmd, tasks)
+        pool.close()
+        pool.join()
 
     def lunchThreads(self,threads,rate=0.2):
         if threads:
