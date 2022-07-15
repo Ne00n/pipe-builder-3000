@@ -1,3 +1,5 @@
+import random
+
 class Templator:
     def getUniqueClients(self,targets,target="",count=False):
         clients = []
@@ -19,6 +21,7 @@ class Templator:
             count += 1
         return template
     def genServer(self,servers,ip,data,server,port,privateKey,publicKey,targets,v6only=False):
+        randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
         template = '''[Interface]
         Address = 10.0.'''+str(data['id'])+'''.'''+str(server)+'''/31
         ListenPort = '''+str(port)+'''
@@ -34,7 +37,7 @@ class Templator:
                 else:
                     template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
             template += f"ip link add vxlan{targets['vxlanID']} type vxlan id {targets['vxlanID']} dstport 4789 local 10.0.{data['id']}.1; ip link set vxlan{targets['vxlanID']} up;"
-            template += f"ME=`hostname`; ip link set dev vxlan{targets['vxlanID']} address `echo -n 02: ; echo -n $ME | md5sum | sed 's/\(..\)/\1:/g; s/.$//' | colrm 15`;"
+            template += f"ip link set dev vxlan{targets['vxlanID']} address {randomMac};"
             template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
             template += self.genVXLAN(servers,targets['vxlanID'])
             template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
