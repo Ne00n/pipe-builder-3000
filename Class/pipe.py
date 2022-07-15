@@ -107,10 +107,27 @@ class Pipe:
                     else:
                         self.cmd(clientName+suffix,'rm -f /etc/wireguard/'+self.targets['prefix']+server+v6+'.conf')
         if threading:
+            #aggregation before dispatch
+            threads = self.aggregate(threads)
             #shutdown the wireguards
             self.lunchPool(threads)
+            #aggregation before dispatch
+            files = self.aggregate(files)
             #removing the wireguards
             self.lunchPool(files)
+
+    def aggregate(self,tasks,aggregation = 5):
+        newTasks,loader = [],{}
+        for task in tasks:
+            if not task[0] in loader: loader[task[0]] = []
+            loader[task[0]].append(task[1])
+        for target,tasks in loader.items():
+            for index in range(aggregation,len(tasks),aggregation):
+                minimum = index - aggregation
+                data = " && ".join(tasks[minimum:index])
+                newTasks.append([target,data])
+        random.shuffle(newTasks)
+        return newTasks
 
     def clean(self):
         threads,ignoreList = [],[]
