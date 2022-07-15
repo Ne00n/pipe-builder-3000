@@ -178,7 +178,7 @@ class Pipe:
         if answer == "y": self.lunchThreads(threads)
 
     def lunchPool(self,tasks):
-        pool = multiprocessing.Pool(processes = 5)
+        pool = multiprocessing.Pool(processes = 10)
         results = pool.map(self.listToCmd, tasks)
         pool.close()
         pool.join()
