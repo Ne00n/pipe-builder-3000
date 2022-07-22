@@ -35,26 +35,35 @@ class Pipe:
         if not ip: return False
         return True
 
+    def checkHost(self,host,serverData):
+        v4 = self.resolveHostname(host).strip()
+        v6 = self.resolveHostname(f"{host}v6").strip()
+        suffix = "v6" if v6 and v4 is False else ""
+        hostData = {"v4":v4,"v6":v6,"suffix":suffix}
+        if not v4 and not v6: exit(f"Could not resolve {host}")
+        if v4:
+            wg = self.cmd(host,'wg help',2)[0]
+            if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {host}")
+        if v6 and not "nDv6" in serverData:
+            wg = self.cmd(f"{host}v6",'wg help',2)[0]
+            if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {host}v6")
+        return hostData
+
     def preflight(self):
         print("Pre-flight")
-        names,ips,resolve = [],[],{}
+        names,ips,resolve,clients = [],[],{},[]
         for server,serverData in self.targets['servers'].items():
             print(f"Checking {server}")
-            v4 = self.resolveHostname(server).strip()
-            v6 = self.resolveHostname(f"{server}v6").strip()
-            suffix = "v6" if v6 and v4 is False else ""
-            resolve[server] = {"v4":v4,"v6":v6,"suffix":suffix}
-            if not v4 and not v6: exit(f"Could not resolve {server}")
-            if v4:
-                wg = self.cmd(server,'wg help',2)[0]
-                if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}")
-            if v6 and not "nDv6" in serverData:
-                wg = self.cmd(f"{server}v6",'wg help',2)[0]
-                if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}v6")
-            if server in names: exit(f"name collision on {server}")
+            resolve[server] = self.checkHost(server,serverData)
+            if server in names: exit(f"name collision on {host}")
             if serverData['id'] in ips: exit(f"id collision on {serverData['id']}")
             names.append(server)
             ips.append(serverData['id'])
+            print(f"Checking Clients of {server}")
+            for client in serverData['Targets']:
+                if client == "*" or client == "geo" or client in clients: continue
+                resolve[client] = self.checkHost(client,{})
+                clients.append(client)
         input("Pre-flight done, press any key to launch")
         return resolve
 
