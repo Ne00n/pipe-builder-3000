@@ -46,7 +46,7 @@ class Pipe:
             if v4:
                 wg = self.cmd(server,'wg help',2)[0]
                 if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}")
-            if v6:
+            if v6 and not "nDv6" in data:
                 wg = self.cmd(f"{server}v6",'wg help',2)[0]
                 if "Usage: wg <cmd>" not in wg: exit(f"Connectivity issue or Wireguard not installed on {server}v6")
             if server in names: exit(f"name collision on {server}")
