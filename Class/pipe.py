@@ -241,7 +241,7 @@ class Pipe:
         #Templator
         T = Templator()
         #Check for nDv6
-        suffix = "v6" if ipv6 and not "nDv6" in self.targets['servers'][server] and not "nDv6" in self.targets['servers'][client] else ""
+        suffix = "v6" if ipv6 and not "nDv6" in self.targets['servers'][server] and client in self.targets['servers'] and not "nDv6" in self.targets['servers'][client] else ""
         wgSuffix = "v6" if ipv6 else ""
         #Generate Client and Public key
         keys = self.cmd(f"{client}{suffix}",'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
