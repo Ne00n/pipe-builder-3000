@@ -37,11 +37,12 @@ class Pipe:
 
     def preflight(self):
         print("Pre-flight")
-        names,ips = [],[]
+        names,ips,resolve = [],[],{}
         for server,data in self.targets['servers'].items():
             print(f"Checking {server}")
-            v4 = self.resolveHostname(server)
-            v6 = self.resolveHostname(f"{server}v6")
+            v4 = self.resolveHostname(server).strip()
+            v6 = self.resolveHostname(f"{server}v6").strip()
+            resolve[server] = {"v4":v4,"v6":v6}
             if not v4 and not v6: exit(f"Could not resolve {server}")
             if v4:
                 wg = self.cmd(server,'wg help',2)[0]
@@ -54,6 +55,7 @@ class Pipe:
             names.append(server)
             ips.append(data['id'])
         input("Pre-flight done, press any key to launch")
+        return resolve
 
     def prepare(self,server,threading=False,Filter=True,delete=False,ignorelist=[],clean=False,reconfigure=[]):
         print("---",server,"Preparing","---")
@@ -274,7 +276,7 @@ class Pipe:
         if reconfigure[0] != "":
             reconfigure.append("dummy")
         if answer == "y": threading = True
-        self.preflight()
+        resolve = self.preflight()
         print("Launching")
         time.sleep(3)
         for server,data in self.targets['servers'].items():
