@@ -238,41 +238,39 @@ class Pipe:
         return total / len(parsed)
 
     def execute(self,clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
-        v6only = False
         #Templator
         T = Templator()
+        #Check for nDv6
+        suffix = "v6" if ipv6 and not "nDv6" in serverData else ""
         #Generate Client and Public key
-        keys = self.cmd(client,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
+        keys = self.cmd(f"{client}{suffix}",'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
         privateClient, publicClient = keys.splitlines()
-        #Check if we are on v6 only
-        if self.checkResolve(server.replace("v6","")) is False: v6only = True
-        #Resolve hostname
-        ip = self.resolveHostname(server)
-        ip = '['+ip.rstrip()+']' if ipv6 else ip
+        #Prepare IP
+        ip = f'['{resolve[server]['v6']}']' if ipv6 else resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
+        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['prefix']))
         #Type Check
         if serverData['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(server,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf')
+            self.cmd(f"{server}{suffix}",'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf')
         #Put Server config & Start
         if dummy is True: client = "dummy"
         print('Creating & Starting',client,'on',server)
-        self.cmd(server,'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv')
+        self.cmd(f"{server}{suffix}",'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv')
         if dummy is True: return True
         #Generate Client config
         clientIP = False
-        if self.isClient(client) and client.replace("v6","") not in clients:
-            clients.append(client.replace("v6",""))
+        if self.isClient(client) and client not in clients:
+            clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),serverData['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),serverData['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
         #Type Check
-        if client.replace("v6","") in self.targets['servers'] and self.targets['servers'][client.replace("v6","")]['type'] == 'boringtun':
+        if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(client,'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
+            self.cmd(f"{client}{suffix}",'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
-        self.cmd(client,'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server)
+        self.cmd(f"{client}{suffix}",'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server)
         print('Done',client,'on',server)
 
     def run(self):
@@ -285,7 +283,7 @@ class Pipe:
         if reconfigure[0] != "":
             reconfigure.append("dummy")
         if answer == "y": threading = True
-        resolve = self.preflight()
+        self.resolve = self.preflight()
         print("Launching")
         time.sleep(3)
         for server,serverData in self.targets['servers'].items():
@@ -304,7 +302,7 @@ class Pipe:
             print("---",server,"Deploying","---")
             print(server,"Using rate",rate)
             #Check if v6 only
-            suffix = resolve[server]['suffix']
+            suffix = self.resolve[server]['suffix']
             #Generate Server keys
             keys = self.cmd(server+suffix,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
             privateServer, publicServer = keys.splitlines()
@@ -320,8 +318,8 @@ class Pipe:
                         #Prevent double connections
                         if target in crossConnect: continue
                         #Resolve
-                        v4 = True if resolve[server]['v4'] and resolve[target]['v4'] else False
-                        v6 = True if resolve[server]['v6'] and resolve[target]['v6'] else False
+                        v4 = True if self.resolve[server]['v4'] and self.resolve[target]['v4'] else False
+                        v6 = True if self.resolve[server]['v6'] and self.resolve[target]['v6'] else False
                         #Geo, default 200ms however if defined we apply the actual limit on booth sides
                         threshold = targetData['latency'] if "geo" in targetData['Targets'] and "latency" in targetData else 200
                         threshold = serverData['latency'] if threshold == 200 and "geo" in serverData['Targets'] and "latency" in serverData else 200
@@ -350,7 +348,7 @@ class Pipe:
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    self.execute(clients,serverData,serverIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True)
+                                    self.execute(clients,serverData,serverIP,basePort,target,server,privateServer,publicServer,True)
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         else:
                             if v4:
@@ -359,29 +357,29 @@ class Pipe:
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True])))
+                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server,privateServer,publicServer,True])))
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                 else:
                     if client in crossConnect: continue
                     print("direct-connectv4|v6™")
                     #Threading
                     if answer != "y":
-                        if resolve[server]['v4'] and resolve[client]['v4']:
+                        if self.resolve[server]['v4'] and self.resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
-                        if resolve[server]['v6'] and resolve[client]['v6']:
+                        if self.resolve[server]['v6'] and self.resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                self.execute(clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True)
+                                self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,True)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                     else:
-                        if resolve[server]['v4'] and resolve[client]['v4']:
+                        if self.resolve[server]['v4'] and self.resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
-                        if resolve[server]['v6'] and resolve[client]['v6']:
+                        if self.resolve[server]['v6'] and self.resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True])))
+                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,True])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
             #Check if target has any wg configuration
             if execute is False:
