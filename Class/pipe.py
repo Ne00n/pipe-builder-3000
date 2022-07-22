@@ -241,36 +241,37 @@ class Pipe:
         #Templator
         T = Templator()
         #Check for nDv6
-        suffix = "v6" if ipv6 and not "nDv6" in self.Targets['servers'][server] and not "nDv6" in self.Targets['servers'][client] else ""
+        suffix = "v6" if ipv6 and not "nDv6" in self.targets['servers'][server] and not "nDv6" in self.targets['servers'][client] else ""
+        wgSuffix = "v6" if ipv6 else ""
         #Generate Client and Public key
         keys = self.cmd(f"{client}{suffix}",'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
         privateClient, publicClient = keys.splitlines()
         #Prepare IP
         ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),self.Targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['suffix']))
+        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['suffix']))
         #Type Check
-        if self.Targets['servers'][server]['type'] == 'boringtun':
+        if self.targets['servers'][server]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(f"{server}{suffix}",'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf')
+            self.cmd(f"{server}{suffix}",f'mkdir -p /etc/systemd/system/wg-quick@{self.targets["prefix"]}{client}{wgSuffix}Serv.service.d/; echo "{serviceConfig}" > /etc/systemd/system/wg-quick@{self.targets["prefix"]}{client}{wgSuffix}Serv.service.d/boringtun.conf')
         #Put Server config & Start
         if dummy is True: client = "dummy"
         print('Creating & Starting',client,'on',server)
-        self.cmd(f"{server}{suffix}",'echo "'+serverConfig+'" > /etc/wireguard/'+self.targets['prefix']+client+'Serv.conf && systemctl enable wg-quick@'+self.targets['prefix']+client+'Serv && systemctl start wg-quick@'+self.targets['prefix']+client+'Serv')
+        self.cmd(f"{server}{suffix}",f'echo "{serverConfig}" > /etc/wireguard/{self.targets["prefix"]}{client}{wgSuffix}Serv.conf && systemctl enable wg-quick@{self.targets["prefix"]}{client}{wgSuffix}Serv && systemctl start wg-quick@{self.targets["prefix"]}{client}{wgSuffix}Serv')
         if dummy is True: return True
         #Generate Client config
         clientIP = False
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),self.Targets['servers'][server]['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),self.targets['servers'][server]['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
         #Type Check
         if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
-            self.cmd(f"{client}{suffix}",'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+server+'.service.d/boringtun.conf')
+            self.cmd(f"{client}{suffix}",f'mkdir -p /etc/systemd/system/wg-quick@{self.targets["prefix"]}{server}{wgSuffix}.service.d/; echo "{serviceConfig}" > /etc/systemd/system/wg-quick@{self.targets["prefix"]}{server}{wgSuffix}.service.d/boringtun.conf')
         #Put Client config & Start
         print('Creating & Starting',server,'on',client)
-        self.cmd(f"{client}{suffix}",'echo "'+clientConfig+'" > /etc/wireguard/'+self.targets['prefix']+server+'.conf && systemctl enable wg-quick@'+self.targets['prefix']+server+' && systemctl start wg-quick@'+self.targets['prefix']+server)
+        self.cmd(f"{client}{suffix}",f'echo "{clientConfig}" > /etc/wireguard/{self.targets["prefix"]}{server}{wgSuffix}.conf && systemctl enable wg-quick@{self.targets["prefix"]}{server}{wgSuffix} && systemctl start wg-quick@{self.targets["prefix"]}{server}{wgSuffix}')
         print('Done',client,'on',server)
 
     def run(self):
