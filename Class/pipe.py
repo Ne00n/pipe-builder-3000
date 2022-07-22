@@ -234,7 +234,12 @@ class Pipe:
         if not parsed: return 65000
         total = 0
         for ip,ms,loss in parsed:
-            total += float(ms)
+            try:
+                total += float(ms)
+            except:
+                print(result)
+                print(parsed)
+                return 65000
         return total / len(parsed)
 
     def execute(self,clients,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
