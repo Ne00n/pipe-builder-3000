@@ -214,11 +214,11 @@ class Pipe:
     def isClient(self,client):
         return False if client.replace("v6","") in self.targets['servers'] else True
 
-    def increaseDis(self,execute,vpnIP,basePort):
+    def increaseDis(self,execute,serverIP,basePort):
         execute = True
-        vpnIP +=2
+        serverIP +=2
         basePort +=1
-        return execute,vpnIP,basePort
+        return execute,serverIP,basePort
 
     def average(self,result):
         parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
@@ -228,7 +228,7 @@ class Pipe:
             total += float(ms)
         return total / len(parsed)
 
-    def execute(self,clients,serverData,vpnIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
+    def execute(self,clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         v6only = False
         #Templator
         T = Templator()
@@ -241,7 +241,7 @@ class Pipe:
         ip = self.resolveHostname(server)
         ip = '['+ip.rstrip()+']' if ipv6 else ip
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,vpnIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
+        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,v6only)
         #Type Check
         if serverData['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -256,7 +256,7 @@ class Pipe:
         if self.isClient(client) and client.replace("v6","") not in clients:
             clients.append(client.replace("v6",""))
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),serverData['id'],vpnIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),serverData['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client.replace("v6",""),self.targets)
         #Type Check
         if client.replace("v6","") in self.targets['servers'] and self.targets['servers'][client.replace("v6","")]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -281,7 +281,7 @@ class Pipe:
         time.sleep(3)
         for server,serverData in self.targets['servers'].items():
             #Define/Reset stuff
-            threads,vpnIP = [],4
+            threads,serverIP = [],4
             #Prepare
             if serverData['basePort'] == "random":
                 self.targets['servers'][server]['basePort'] = basePort = random.randint(1500, 55000)
@@ -338,21 +338,21 @@ class Pipe:
                         if answer != "y":
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    self.execute(clients,serverData,vpnIP,basePort,target,server,privateServer,publicServer)
-                                execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                    self.execute(clients,serverData,serverIP,basePort,target,server,privateServer,publicServer)
+                                execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    self.execute(clients,serverData,vpnIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True)
-                                execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                    self.execute(clients,serverData,serverIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True)
+                                execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         else:
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    threads.append(Thread(target=self.execute, args=([clients,serverData,vpnIP,basePort,target,server,privateServer,publicServer])))
-                                execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server,privateServer,publicServer])))
+                                execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    threads.append(Thread(target=self.execute, args=([clients,serverData,vpnIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True])))
-                                execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True])))
+                                execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                 else:
                     v4,v6 = False,False
                     if client in crossConnect: continue
@@ -363,28 +363,28 @@ class Pipe:
                     if answer != "y":
                         if v4:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                self.execute(clients,serverData,vpnIP,basePort,client,server,privateServer,publicServer)
-                            execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer)
+                            execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         if v6:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                self.execute(clients,serverData,vpnIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True)
-                            execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                self.execute(clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True)
+                            execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                     else:
                         if v4:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                threads.append(Thread(target=self.execute, args=([clients,serverData,vpnIP,basePort,client,server,privateServer,publicServer])))
-                            execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer])))
+                            execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         if v6:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                threads.append(Thread(target=self.execute, args=([clients,serverData,vpnIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True])))
-                            execute,vpnIP,basePort = self.increaseDis(execute,vpnIP,basePort)
+                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True])))
+                            execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
                 if answer != "y":
-                    self.execute(clients,serverData,vpnIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,serverData,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,serverData,vpnIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
