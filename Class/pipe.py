@@ -221,7 +221,7 @@ class Pipe:
                 thread.join()
 
     def isClient(self,client):
-        return False if client.replace("v6","") in self.targets['servers'] else True
+        return False if client in self.targets['servers'] else True
 
     def average(self,result):
         parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
