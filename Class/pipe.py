@@ -313,12 +313,9 @@ class Pipe:
                         v4,v6 = False,False
                         if resolve[server]['v4'] and self.checkResolve(target): v4 = True
                         if resolve[server]['v6'] and self.checkResolve(target+"v6"): v6 = True
-                        #Geo
-                        threshold = 200
-                        if "geo" in targetData['Targets']:
-                            if "latency" in targetData: threshold = targetData['latency']
-                        if "geo" in data['Targets']:
-                            if "latency" in data: threshold = data['latency']
+                        #Geo, default 200ms however if defined we apply the actual limit on booth sides
+                        threshold = targetData['latency'] if "geo" in targetData['Targets'] and "latency" in targetData else 200
+                        threshold = data['latency'] if threshold == 200 and "geo" in data['Targets'] and "latency" in data else 200
                         if "geo" in targetData['Targets'] or "geo" in data['Targets']:
                             if v4: 
                                 targetv4 = self.resolveHostname(target)
