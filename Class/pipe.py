@@ -267,8 +267,7 @@ class Pipe:
         print('Done',client,'on',server)
 
     def run(self):
-        threading,cleanList,start = False,[],4
-        crossConnect,clients,threads = [],[],[]
+        threading,cleanList,crossConnect,clients = False,[],[],[]
         answer = input("Use Threading? (y/enter): ")
         clean = input("Any servers to ignore and remove? (Name,Name../enter): ")
         reconfigure = input("Reconfigure any servers? (Name,Name../enter): ")
@@ -281,6 +280,8 @@ class Pipe:
         print("Launching")
         time.sleep(3)
         for server,serverData in self.targets['servers'].items():
+            #Define/Reset stuff
+            threads,start = [],4
             #Prepare
             if serverData['basePort'] == "random":
                 self.targets['servers'][server]['basePort'] = basePort = random.randint(1500, 55000)
@@ -390,5 +391,3 @@ class Pipe:
                     if rate > 2: rate = 2
                     print(server,"Updated rate",rate)
                 self.lunchThreads(threads,rate)
-            #Reset stuff
-            threads,start = [],4
