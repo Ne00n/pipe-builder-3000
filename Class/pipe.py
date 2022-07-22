@@ -321,8 +321,8 @@ class Pipe:
                         if target in crossConnect: continue
                         #Resolve
                         v4,v6 = False,False
-                        if resolve[server]['v4'] and self.checkResolve(target): v4 = True
-                        if resolve[server]['v6'] and self.checkResolve(target+"v6"): v6 = True
+                        if resolve[server]['v4'] and resolve[target]['v4']: v4 = True
+                        if resolve[server]['v6'] and resolve[target]['v6']: v6 = True
                         #Geo, default 200ms however if defined we apply the actual limit on booth sides
                         threshold = targetData['latency'] if "geo" in targetData['Targets'] and "latency" in targetData else 200
                         threshold = serverData['latency'] if threshold == 200 and "geo" in serverData['Targets'] and "latency" in serverData else 200
@@ -365,8 +365,8 @@ class Pipe:
                 else:
                     v4,v6 = False,False
                     if client in crossConnect: continue
-                    if resolve[server]['v4'] and self.checkResolve(client): v4 = True
-                    if resolve[server]['v6'] and self.checkResolve(client+"v6"): v6 = True
+                    if resolve[server]['v4'] and resolve[client]['v4']: v4 = True
+                    if resolve[server]['v6'] and resolve[client]['v6']: v6 = True
                     print("direct-connectv4|v6™")
                     #Threading
                     if answer != "y":
