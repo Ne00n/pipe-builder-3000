@@ -42,7 +42,8 @@ class Pipe:
             print(f"Checking {server}")
             v4 = self.resolveHostname(server).strip()
             v6 = self.resolveHostname(f"{server}v6").strip()
-            resolve[server] = {"v4":v4,"v6":v6}
+            suffix = "v6" if v6 and v4 is False else ""
+            resolve[server] = {"v4":v4,"v6":v6,"suffix":suffix}
             if not v4 and not v6: exit(f"Could not resolve {server}")
             if v4:
                 wg = self.cmd(server,'wg help',2)[0]
@@ -293,10 +294,7 @@ class Pipe:
             print("---",server,"Deploying","---")
             print(server,"Using rate",rate)
             #Check if v6 only
-            v6only,suffix = False,""
-            if self.checkResolve(server) is False and self.checkResolve(server+"v6") is True:
-                print("Switching",server,"to v6 only")
-                v6only,suffix = True,"v6"
+            suffix = resolve[server]['suffix']
             #Generate Server keys
             keys = self.cmd(server+suffix,'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
             privateServer, publicServer = keys.splitlines()
@@ -313,8 +311,8 @@ class Pipe:
                         if target in crossConnect: continue
                         #Resolve
                         v4,v6 = False,False
-                        if self.checkResolve(server) and self.checkResolve(target): v4 = True
-                        if self.checkResolve(server+"v6") and self.checkResolve(target+"v6"): v6 = True
+                        if resolve[server]['v4'] and self.checkResolve(target): v4 = True
+                        if resolve[server]['v6'] and self.checkResolve(target+"v6"): v6 = True
                         #Geo
                         threshold = 200
                         if "geo" in targetData['Targets']:
@@ -360,8 +358,8 @@ class Pipe:
                 else:
                     v4,v6 = False,False
                     if client in crossConnect: continue
-                    if self.checkResolve(server) and self.checkResolve(client): v4 = True
-                    if self.checkResolve(server+"v6") and self.checkResolve(client+"v6"): v6 = True
+                    if resolve[server]['v4'] and self.checkResolve(client): v4 = True
+                    if resolve[server]['v6'] and self.checkResolve(client+"v6"): v6 = True
                     print("direct-connectv4|v6™")
                     #Threading
                     if answer != "y":
