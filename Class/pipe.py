@@ -237,20 +237,20 @@ class Pipe:
             total += float(ms)
         return total / len(parsed)
 
-    def execute(self,clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
+    def execute(self,clients,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         #Templator
         T = Templator()
         #Check for nDv6
-        suffix = "v6" if ipv6 and not "nDv6" in serverData else ""
+        suffix = "v6" if ipv6 and not "nDv6" in self.Targets['servers'][server] else ""
         #Generate Client and Public key
         keys = self.cmd(f"{client}{suffix}",'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
         privateClient, publicClient = keys.splitlines()
         #Prepare IP
         ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['suffix']))
+        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),self.Targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['suffix']))
         #Type Check
-        if serverData['type'] == 'boringtun':
+        if self.Targets['servers'][server]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
             self.cmd(f"{server}{suffix}",'mkdir -p /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/; echo "'+serviceConfig+'" > /etc/systemd/system/wg-quick@'+self.targets['prefix']+client+'Serv.service.d/boringtun.conf')
         #Put Server config & Start
@@ -263,7 +263,7 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),serverData['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
+        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),self.Targets['servers'][server]['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
         #Type Check
         if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -344,20 +344,20 @@ class Pipe:
                         if answer != "y":
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    self.execute(clients,serverData,serverIP,basePort,target,server,privateServer,publicServer)
+                                    self.execute(clients,serverIP,basePort,target,server,privateServer,publicServer)
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    self.execute(clients,serverData,serverIP,basePort,target,server,privateServer,publicServer,True)
+                                    self.execute(clients,serverIP,basePort,target,server,privateServer,publicServer,True)
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         else:
                             if v4:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server,privateServer,publicServer])))
+                                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server,privateServer,publicServer])))
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                             if v6:
                                 if reconfigure[0] == "" or reconfigure[0] != "" and (target in reconfigure or server in reconfigure):
-                                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server,privateServer,publicServer,True])))
+                                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server,privateServer,publicServer,True])))
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                 else:
                     if client in crossConnect: continue
@@ -366,28 +366,28 @@ class Pipe:
                     if answer != "y":
                         if self.resolve[server]['v4'] and self.resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer)
+                                self.execute(clients,serverIP,basePort,client,server,privateServer,publicServer)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         if self.resolve[server]['v6'] and self.resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,True)
+                                self.execute(clients,serverIP,basePort,client,server,privateServer,publicServer,True)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                     else:
                         if self.resolve[server]['v4'] and self.resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer])))
+                                threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,client,server,privateServer,publicServer])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                         if self.resolve[server]['v6'] and self.resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
-                                threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer,True])))
+                                threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,client,server,privateServer,publicServer,True])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
                 if answer != "y":
-                    self.execute(clients,serverData,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
