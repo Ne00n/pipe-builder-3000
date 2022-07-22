@@ -246,7 +246,7 @@ class Pipe:
         keys = self.cmd(f"{client}{suffix}",'key=$(wg genkey) && echo $key && echo $key | wg pubkey')[0]
         privateClient, publicClient = keys.splitlines()
         #Prepare IP
-        ip = f"[{resolve[server]['v6']}]" if ipv6 else resolve[server]['v4']
+        ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
         serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),serverData,serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['prefix']))
         #Type Check
