@@ -320,9 +320,8 @@ class Pipe:
                         #Prevent double connections
                         if target in crossConnect: continue
                         #Resolve
-                        v4,v6 = False,False
-                        if resolve[server]['v4'] and resolve[target]['v4']: v4 = True
-                        if resolve[server]['v6'] and resolve[target]['v6']: v6 = True
+                        v4 = True if resolve[server]['v4'] and resolve[target]['v4'] else False
+                        v6 = True if resolve[server]['v6'] and resolve[target]['v6'] else False
                         #Geo, default 200ms however if defined we apply the actual limit on booth sides
                         threshold = targetData['latency'] if "geo" in targetData['Targets'] and "latency" in targetData else 200
                         threshold = serverData['latency'] if threshold == 200 and "geo" in serverData['Targets'] and "latency" in serverData else 200
@@ -363,27 +362,24 @@ class Pipe:
                                     threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,target+"v6",server+"v6",privateServer,publicServer,True])))
                                 execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                 else:
-                    v4,v6 = False,False
                     if client in crossConnect: continue
-                    if resolve[server]['v4'] and resolve[client]['v4']: v4 = True
-                    if resolve[server]['v6'] and resolve[client]['v6']: v6 = True
                     print("direct-connectv4|v6™")
                     #Threading
                     if answer != "y":
-                        if v4:
+                        if resolve[server]['v4'] and resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 self.execute(clients,serverData,serverIP,basePort,client,server,privateServer,publicServer)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
-                        if v6:
+                        if resolve[server]['v6'] and resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 self.execute(clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True)
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
                     else:
-                        if v4:
+                        if resolve[server]['v4'] and resolve[client]['v4']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client,server,privateServer,publicServer])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
-                        if v6:
+                        if resolve[server]['v6'] and resolve[client]['v6']:
                             if reconfigure[0] == "" or reconfigure[0] != "" and (client in reconfigure or server in reconfigure):
                                 threads.append(Thread(target=self.execute, args=([clients,serverData,serverIP,basePort,client+"v6",server+"v6",privateServer,publicServer,True])))
                             execute,serverIP,basePort = self.increaseDis(execute,serverIP,basePort)
