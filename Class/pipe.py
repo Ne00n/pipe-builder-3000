@@ -325,17 +325,15 @@ class Pipe:
                         threshold = serverData['latency'] if threshold == 200 and "geo" in serverData['Targets'] and "latency" in serverData else 200
                         if "geo" in targetData['Targets'] or "geo" in serverData['Targets']:
                             if v4: 
-                                targetv4 = self.resolveHostname(target)
                                 print(f"Getting Latency for {target} for GEO")
-                                result = self.cmd(server,f'fping -c 3 {targetv4}')[0]
+                                result = self.cmd(server,f'fping -c 3 {self.resolve[target]['v4']}')[0]
                                 latency = self.average(result)
                                 if latency > threshold: 
                                     print(f"Skipping link to {target} latency to high")
                                     v4 = False
                             if v6: 
-                                targetv6 = self.resolveHostname(f"{target}v6")
                                 print(f"Getting Latency for {target}v6 for GEO")
-                                result = self.cmd(f"{server}v6",f'fping -c 3 {targetv6}')[0]
+                                result = self.cmd(f"{server}v6",f'fping -c 3 {self.resolve[target]['v6']}')[0]
                                 latency = self.average(result)
                                 if latency > threshold: 
                                     print(f"Skipping link to {target}v6 latency to high")
