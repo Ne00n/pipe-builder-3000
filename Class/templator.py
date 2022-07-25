@@ -49,22 +49,22 @@ class Templator:
         AllowedIPs = 0.0.0.0/0'''
         return template
     def genClient(self,servers,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client,targets):
-        template = '''[Interface]
-        Address = 10.0.'''+str(subnet)+'''.'''+str(server+1)+'''/31
-        PrivateKey = '''+str(privateKey)
+        template = f'''[Interface]
+        Address = {targets['prefixSub']}.{subnet}.{server+1}/31
+        PrivateKey = {privateKey}'''
         if clientIP == True:
             vxlanIP = 255 - self.getUniqueClients(servers,client,True)
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.250.'+str(len(clients))+'/32 dev lo;'
-            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.250.'+str(len(clients))+'; ip link set vxlan'+str(targets['vxlanID'])+' up;'
-            template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(vxlanIP)+'/24 dev vxlan'+str(targets['vxlanID'])+';'
+            template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.250.{len(clients)}/32 dev lo;'
+            template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport 4789 local {targets["prefixSub"]}.250.{len(clients)}; ip link set vxlan{targets["vxlanID"]} up;'
+            template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{vxlanIP}/24 dev vxlan{targets["vxlanID"]};'
             template += self.genVXLAN(servers,targets['vxlanID'])
-            template += '\nPostDown = ip addr del 10.0.250.'+str(len(clients))+'/32 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
-        template += '''
+            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip link delete vxlan{targets["vxlanID"]};'
+        template += f'''
         Table = off
         [Peer]
-        PublicKey = '''+str(publicKey)+'''
+        PublicKey = {publicKey}
         AllowedIPs = 0.0.0.0/0
-        Endpoint = '''+str(ip)+''':'''+str(port)
+        Endpoint = {ip}:{port}'''
         if clientIP == True: template += '\nPersistentKeepalive = 20'
         return template
     def genBoringtun(self):
