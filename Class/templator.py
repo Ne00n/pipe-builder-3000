@@ -44,7 +44,7 @@ class Templator:
             template += self.genVXLAN(servers,targets["vxlanID"])
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
-        SaveConfig = true
+        SaveConfig = off
         Table = off
         [Peer]
         PublicKey = {publicKey}
@@ -63,6 +63,7 @@ class Templator:
             template += self.genVXLAN(servers,targets['vxlanID'])
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
+        SaveConfig = off
         Table = off
         [Peer]
         PublicKey = {publicKey}
