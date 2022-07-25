@@ -10,15 +10,15 @@ class Templator:
                 if client == target and count == True:
                     return len(clients)
         return clients
-        
+
     def genVXLAN(self,targets,vxlan):
         template = ""
         for node,data in targets.items():
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.'+str(data['id'])+'.1;'
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{vxlan} dst {targets["prefixSub"]}.{data["id"]}.1;'
         clients = self.getUniqueClients(targets)
         count = 1
         for client in clients:
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.250.'+str(count)+';'
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{vxlan} dst {targets["prefixSub"]}.250.{count};'
             count += 1
         return template
 
