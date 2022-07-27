@@ -11,14 +11,14 @@ class Templator:
                     return len(clients)
         return clients
 
-    def genVXLAN(self,targets,vxlan):
+    def genVXLAN(self,servers,targets):
         template = ""
-        for node,data in targets.items():
-            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{vxlan} dst {targets["prefixSub"]}.{data["id"]}.1;'
+        for node,data in servers.items():
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.{data["id"]}.1;'
         clients = self.getUniqueClients(targets)
         count = 1
         for client in clients:
-            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{vxlan} dst {targets["prefixSub"]}.250.{count};'
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.250.{count};'
             count += 1
         return template
 
@@ -41,7 +41,7 @@ class Templator:
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport 4789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip link set dev vxlan{targets["vxlanID"]} address {randomMac};'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{data["id"]}/24 dev vxlan{targets["vxlanID"]};'
-            template += self.genVXLAN(servers,targets["vxlanID"])
+            template += self.genVXLAN(servers,targets)
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
         SaveConfig = off
@@ -60,7 +60,7 @@ class Templator:
             template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.250.{len(clients)}/32 dev lo;'
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport 4789 local {targets["prefixSub"]}.250.{len(clients)}; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{vxlanIP}/24 dev vxlan{targets["vxlanID"]};'
-            template += self.genVXLAN(servers,targets['vxlanID'])
+            template += self.genVXLAN(servers,targets)
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
         SaveConfig = off
