@@ -248,7 +248,7 @@ class Pipe:
         #Prepare IP
         ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets['servers'],ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.targets,bool(self.resolve[server]['suffix']))
+        serverConfig = T.genServer(self.targets,ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),bool(self.resolve[server]['suffix']))
         #Type Check
         if self.targets['servers'][server]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -263,7 +263,7 @@ class Pipe:
         if self.isClient(client) and client not in clients:
             clients.append(client)
             clientIP = True
-        clientConfig = T.genClient(self.targets['servers'],ip.rstrip(),self.targets['servers'][server]['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client,self.targets)
+        clientConfig = T.genClient(self.targets,ip.rstrip(),self.targets['servers'][server]['id'],serverIP,basePort,privateClient.rstrip(),publicServer.rstrip(),clientIP,clients,client)
         #Type Check
         if client in self.targets['servers'] and self.targets['servers'][client]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()

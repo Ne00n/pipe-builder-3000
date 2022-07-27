@@ -22,7 +22,7 @@ class Templator:
             count += 1
         return template
 
-    def genServer(self,servers,ip,data,server,port,privateKey,publicKey,targets,v6only=False):
+    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,v6only=False):
         randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{data["id"]}.{server}/31
@@ -41,7 +41,7 @@ class Templator:
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport 4789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip link set dev vxlan{targets["vxlanID"]} address {randomMac};'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{data["id"]}/24 dev vxlan{targets["vxlanID"]};'
-            template += self.genVXLAN(servers,targets)
+            template += self.genVXLAN(targets['servers'],targets)
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
         SaveConfig = off
@@ -51,16 +51,16 @@ class Templator:
         AllowedIPs = 0.0.0.0/0'''
         return template
 
-    def genClient(self,servers,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client,targets):
+    def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{subnet}.{server+1}/31
         PrivateKey = {privateKey}'''
         if clientIP == True:
-            vxlanIP = 255 - self.getUniqueClients(servers,client,True)
+            vxlanIP = 255 - self.getUniqueClients(targets['servers'],client,True)
             template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.250.{len(clients)}/32 dev lo;'
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport 4789 local {targets["prefixSub"]}.250.{len(clients)}; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{vxlanIP}/24 dev vxlan{targets["vxlanID"]};'
-            template += self.genVXLAN(servers,targets)
+            template += self.genVXLAN(targets['servers'],targets)
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip link delete vxlan{targets["vxlanID"]};'
         template += f'''
         SaveConfig = off
