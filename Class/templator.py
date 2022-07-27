@@ -15,7 +15,7 @@ class Templator:
         template = ""
         for node,data in servers.items():
             template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.{data["id"]}.1;'
-        clients = self.getUniqueClients(targets)
+        clients = self.getUniqueClients(targets['servers'])
         count = 1
         for client in clients:
             template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.250.{count};'
