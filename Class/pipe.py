@@ -227,19 +227,6 @@ class Pipe(Tools):
     def isClient(self,client):
         return False if client in self.targets['servers'] else True
 
-    def average(self,result):
-        parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]).*?([0-9])% loss",result, re.MULTILINE)
-        if not parsed: return 65000
-        total = 0
-        for ip,ms,loss in parsed:
-            try:
-                total += float(ms)
-            except:
-                print(result)
-                print(parsed)
-                return 65000
-        return total / len(parsed)
-
     def execute(self,clients,serverIP,basePort,client,server,privateServer,publicServer,ipv6=False,dummy=False):
         #Templator
         T = Templator()
