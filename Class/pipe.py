@@ -105,8 +105,10 @@ class Pipe:
                 else:
                     suffix = ""
                     if clientName == "dummy":
-                        print("Skipping",client)
-                        continue
+                        #redirect dummyServ to origin machine
+                        tmpServer = server
+                        server = f"{clientName}Serv"
+                        clientName = tmpServer
                 print("Stopping",self.targets['prefix']+server+v6,"on",clientName+suffix)
                 if threading and clientName not in ignorelist:
                     threads.append([clientName+suffix,'systemctl stop wg-quick@'+self.targets['prefix']+server+v6+' && systemctl disable wg-quick@'+self.targets['prefix']+server+v6])
