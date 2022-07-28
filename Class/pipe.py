@@ -361,12 +361,10 @@ class Pipe(Tools):
                         threshold = serverData['latency'] if threshold == 200 and "geo" in serverData['Targets'] and "latency" in serverData else 200
                         if "geo" in targetData['Targets'] or "geo" in serverData['Targets']:
                             if v4: 
-                                print(f"Getting Latency for {target} for GEO")
                                 if not self.resolve[target]['v4'] in geoCache or geoCache[self.resolve[target]['v4']] > threshold:
                                     print(f"Skipping link to {target} latency to high")
                                     v4 = False
                             if v6: 
-                                print(f"Getting Latency for {target}v6 for GEO")
                                 if not self.resolve[target]['v6'] in geoCache or geoCache[self.resolve[target]['v6']] > threshold:
                                     print(f"Skipping link to {target}v6 latency to high")
                                     v6 = False
