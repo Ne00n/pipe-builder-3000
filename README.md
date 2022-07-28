@@ -56,6 +56,8 @@ cross-connect + point-to-point<br />
 "Server3":{"id":3,"basePort":"random","type":"native","Targets":["*","Server4"]}
 ```
 
+Names should not contain: dummy<br />
+
 /etc/hosts<br />
 ```
 bla.bla.bla.bla    Server1
