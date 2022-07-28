@@ -1,9 +1,10 @@
 import subprocess, random, time, json, re
 from Class.templator import Templator
 from threading import Thread
+from Class.tools import Tools
 import multiprocessing
 
-class Pipe:
+class Pipe(Tools):
     def __init__(self,config="hosts.json"):
         print("Loading",config)
         with open(config) as handle:
@@ -276,6 +277,32 @@ class Pipe:
         self.cmd(f"{client}{suffix}",f'echo "{clientConfig}" > /etc/wireguard/{self.targets["prefix"]}{server}{wgSuffix}.conf && systemctl enable wg-quick@{self.targets["prefix"]}{server}{wgSuffix} && systemctl start wg-quick@{self.targets["prefix"]}{server}{wgSuffix}')
         print('Done',client,'on',server)
 
+    def checkGeo(self,crossConnect):
+        geoList = []
+        for target,targetData in self.targets['servers'].items():
+            #Prevent double connections
+            if target in crossConnect: continue
+            if "geo" in targetData['Targets']: return True
+        return False
+
+    def runGeo(self,server):
+        fping = ['ssh','root@'+server,"fping", "-c", "3"]
+        for target,serverData in self.targets['servers'].items():
+            if self.resolve[server]['v4'] and self.resolve[target]['v4']:
+                fping.append(self.resolve[target]['v4'])
+            if self.resolve[server]['v6'] and self.resolve[target]['v6']:
+                fping.append(self.resolve[target]['v6'])
+        result = subprocess.run(fping, stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        parsed = re.findall("([0-9a-z.:]+).*?([0-9]+.[0-9]+|timed out).*?([0-9])% loss",result.stdout.decode('utf-8'), re.MULTILINE)
+        latency =  {}
+        print(server,"Processing GEO")
+        for ip,ms,loss in parsed:
+            if ip not in latency: latency[ip] = []
+            latency[ip].append(ms)
+        for ip,data in list(latency.items()): 
+            latency[ip] = self.getAvrg(data)
+        return latency
+
     def run(self):
         threading,cleanList,crossConnect,clients = False,[],[],[]
         answer = input("Use Threading? (y/enter): ")
@@ -311,9 +338,15 @@ class Pipe:
             privateServer, publicServer = keys.splitlines()
             for client in serverData['Targets']:
                 if client == "*" or client == "geo":
-                    crossConnect.append(server)
                     execute = False
                     print("cross-connectv4|v6™")
+                    #Check if we need to do GEO
+                    if self.checkGeo(crossConnect) or "geo" in serverData['Targets']:
+                        print(server,"Running GEO")
+                        geoCache = self.runGeo(server)
+                    else:
+                        print("Skipping GEO")
+                    crossConnect.append(server)
                     for target,targetData in self.targets['servers'].items():
                         if "*" not in targetData['Targets'] and "geo" not in targetData['Targets'] and server not in targetData['Targets']:
                             print("Skipping",target,"since no crossConnect")
@@ -329,16 +362,12 @@ class Pipe:
                         if "geo" in targetData['Targets'] or "geo" in serverData['Targets']:
                             if v4: 
                                 print(f"Getting Latency for {target} for GEO")
-                                result = self.cmd(server,f"fping -c 3 {self.resolve[target]['v4']}")[0]
-                                latency = self.average(result)
-                                if latency > threshold: 
+                                if not self.resolve[target]['v4'] in geoCache or geoCache[self.resolve[target]['v4']] > threshold:
                                     print(f"Skipping link to {target} latency to high")
                                     v4 = False
                             if v6: 
                                 print(f"Getting Latency for {target}v6 for GEO")
-                                result = self.cmd(f"{server}v6",f"fping -c 3 {self.resolve[target]['v6']}")[0]
-                                latency = self.average(result)
-                                if latency > threshold: 
+                                if not self.resolve[target]['v6'] in geoCache or geoCache[self.resolve[target]['v6']] > threshold:
                                     print(f"Skipping link to {target}v6 latency to high")
                                     v6 = False
                         #Threading
