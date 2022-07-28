@@ -139,6 +139,7 @@ class Pipe:
             for index in range(0,len(tasks),aggregation):
                 minimum = index - aggregation
                 data = " && ".join(tasks[minimum:index+aggregation])
+                if data == "": continue
                 newTasks.append([target,data])
         random.shuffle(newTasks)
         return newTasks
