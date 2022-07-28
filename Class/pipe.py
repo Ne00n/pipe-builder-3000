@@ -136,9 +136,9 @@ class Pipe:
             if not task[0] in loader: loader[task[0]] = []
             loader[task[0]].append(task[1])
         for target,tasks in loader.items():
-            for index in range(aggregation,len(tasks),aggregation):
+            for index in range(0,len(tasks),aggregation):
                 minimum = index - aggregation
-                data = " && ".join(tasks[minimum:index])
+                data = " && ".join(tasks[minimum:index+aggregation])
                 newTasks.append([target,data])
         random.shuffle(newTasks)
         return newTasks
