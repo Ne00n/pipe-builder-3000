@@ -24,8 +24,10 @@ class Templator:
 
     def genServer(self,targets,ip,data,server,port,privateKey,publicKey,v6only=False):
         randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
+        mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{data["id"]}.{server}/31
+        MTU = {mtu}
         ListenPort = {port}
         PrivateKey = {privateKey}'''
         if port == data['basePort']:
@@ -52,8 +54,10 @@ class Templator:
         return template
 
     def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
+        mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{subnet}.{server+1}/31
+        MTU = {mtu}
         PrivateKey = {privateKey}'''
         if clientIP == True:
             vxlanIP = 255 - self.getUniqueClients(targets['servers'],client,True)
