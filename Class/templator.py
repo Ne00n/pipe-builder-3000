@@ -1,3 +1,5 @@
+import random
+
 class Templator:
     def getUniqueClients(self,targets,target="",count=False):
         clients = []
@@ -8,61 +10,72 @@ class Templator:
                 if client == target and count == True:
                     return len(clients)
         return clients
-    def genVXLAN(self,targets,vxlan):
+
+    def genVXLAN(self,servers,targets):
         template = ""
-        for node,data in targets.items():
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.'+str(data['id'])+'.1;'
-        clients = self.getUniqueClients(targets)
+        for node,data in servers.items():
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.{data["id"]}.1;'
+        clients = self.getUniqueClients(targets['servers'])
         count = 1
         for client in clients:
-            template += 'bridge fdb append 00:00:00:00:00:00 dev vxlan'+str(vxlan)+' dst 10.0.250.'+str(count)+';'
+            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.250.{count};'
             count += 1
         return template
-    def genServer(self,servers,data,server,port,privateKey,publicKey,targets,v6only=False):
-        template = '''[Interface]
-        Address = 10.0.'''+str(data['id'])+'''.'''+str(server)+'''/31
-        ListenPort = '''+str(port)+'''
-        PrivateKey = '''+str(privateKey)
+
+    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,v6only=False):
+        randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
+        mtu = 1412 if "[" in ip else 1420
+        template = f'''[Interface]
+        Address = {targets["prefixSub"]}.{data["id"]}.{server}/31
+        MTU = {mtu}
+        ListenPort = {port}
+        PrivateKey = {privateKey}'''
         if port == data['basePort']:
             if data['type'] != "boringtun" and data['type'] != "container":
-                template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
+                template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo;'
             else:
-                template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add 10.0.'+str(data['id'])+'.1/30 dev lo;'
+                template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo;'
             if v6only is False and port == data['basePort']:
                 if data['type'] == "boringtun" or data['type'] == "container":
                     template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                 else:
-                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}') -j MASQUERADE;"
-            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.'+str(data['id'])+'.1; ip link set vxlan'+str(targets['vxlanID'])+' up;'
-            template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(data['id'])+'/24 dev vxlan'+str(targets['vxlanID'])+';'
-            template += self.genVXLAN(servers,targets['vxlanID'])
-            template += '\nPostDown = ip addr del 10.0.'+str(data['id'])+'.1/30 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
-        template += '''
-        SaveConfig = true
+                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+            template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
+            template += f'ip link set dev vxlan{targets["vxlanID"]} address {randomMac};'
+            template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{data["id"]}/24 dev vxlan{targets["vxlanID"]};'
+            template += self.genVXLAN(targets['servers'],targets)
+            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip link delete vxlan{targets["vxlanID"]};'
+        template += f'''
+        SaveConfig = false
         Table = off
         [Peer]
-        PublicKey = '''+publicKey+'''
+        PublicKey = {publicKey}
         AllowedIPs = 0.0.0.0/0'''
         return template
-    def genClient(self,servers,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client,targets):
-        template = '''[Interface]
-        Address = 10.0.'''+str(subnet)+'''.'''+str(server+1)+'''/31
-        PrivateKey = '''+str(privateKey)
+
+    def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
+        mtu = 1412 if "[" in ip else 1420
+        template = f'''[Interface]
+        Address = {targets["prefixSub"]}.{subnet}.{server+1}/31
+        MTU = {mtu}
+        PrivateKey = {privateKey}'''
         if clientIP == True:
-            vxlanIP = 255 - self.getUniqueClients(servers,client,True)
-            template += '\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add 10.0.250.'+str(len(clients))+'/32 dev lo;'
-            template += 'ip link add vxlan'+str(targets['vxlanID'])+' type vxlan id '+str(targets['vxlanID'])+' dstport 4789 local 10.0.250.'+str(len(clients))+'; ip link set vxlan'+str(targets['vxlanID'])+' up;'
-            template += 'ip addr add 10.0.'+str(targets['vxlanSub'])+'.'+str(vxlanIP)+'/24 dev vxlan'+str(targets['vxlanID'])+';'
-            template += self.genVXLAN(servers,targets['vxlanID'])
-            template += '\nPostDown = ip addr del 10.0.250.'+str(len(clients))+'/32 dev lo; ip link delete vxlan'+str(targets['vxlanID'])+';'
-        template += '''
+            vxlanIP = 255 - self.getUniqueClients(targets['servers'],client,True)
+            template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.250.{len(clients)}/32 dev lo;'
+            template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.250.{len(clients)}; ip link set vxlan{targets["vxlanID"]} up;'
+            template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{vxlanIP}/24 dev vxlan{targets["vxlanID"]};'
+            template += self.genVXLAN(targets['servers'],targets)
+            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip link delete vxlan{targets["vxlanID"]};'
+        template += f'''
+        SaveConfig = false
         Table = off
         [Peer]
-        PublicKey = '''+str(publicKey)+'''
+        PublicKey = {publicKey}
         AllowedIPs = 0.0.0.0/0
-        Endpoint = '''+str(ip)+''':'''+str(port)
+        Endpoint = {ip}:{port}'''
         if clientIP == True: template += '\nPersistentKeepalive = 20'
         return template
+
     def genBoringtun(self):
         template = '''[Service]
 Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun

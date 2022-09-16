@@ -5,7 +5,7 @@ Make sure the Hostnames are present in /etc/hosts<br />
 Wireguard needs to be already installed on all servers<br />
 
 Its recommended to run this on clean servers.<br />
-By default 10.0.x.x/8 is used.<br />
+By default 10.0.x.x/16 is used. Can be changed to 172.16.0.0/12 or 192.168.0.0/16.<br />
 10.0.id.1 Node /30<br />
 10.0.id.4-255 peers /31<br />
 10.0.250.1-255 clients /32<br />
@@ -31,7 +31,8 @@ apt-get update && apt-get install wireguard python3 -y
 
 **Prepare**<br />
 Rename hosts.example.json to hosts.json and fill it up<br />
-You can use * if you want to cross-connect to everything else<br />
+You can use * or geo if you want to cross-connect to everything else<br />
+Geo uses a latency cap for setting up links, its a bit slower than *<br />
 
 **Examples**<br />
 
@@ -44,7 +45,7 @@ point-to-point<br />
 cross-connect (mesh)<br />
 ```
 "Server1":{"id":1,"basePort":51194,"type":"native","Targets":["*"]},
-"Server2":{"id":2,"basePort":"random","type":"native","Targets":["*"]},
+"Server2":{"id":2,"basePort":"random","type":"native","Targets":["geo"]},
 "Server3":{"id":3,"basePort":51194,"type":"native","Targets":["*"]}
 ```
 
@@ -54,6 +55,8 @@ cross-connect + point-to-point<br />
 "Server2":{"id":2,"basePort":51194,"type":"native","Targets":["*","Server5"]},
 "Server3":{"id":3,"basePort":"random","type":"native","Targets":["*","Server4"]}
 ```
+
+Names should not contain: dummy<br />
 
 /etc/hosts<br />
 ```
