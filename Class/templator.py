@@ -26,7 +26,7 @@ class Templator:
         randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
-        Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fc00:0:0:{data["id"]}::{server}/127
+        Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe99:{data["id"]}::{server}/127
         MTU = {mtu}
         ListenPort = {port}
         PrivateKey = {privateKey}'''
@@ -56,7 +56,7 @@ class Templator:
     def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
-        Address = {targets["prefixSub"]}.{subnet}.{server+1}/31, fc00:0:0:{subnet}::{server+1}/127
+        Address = {targets["prefixSub"]}.{subnet}.{server+1}/31, fe99:{subnet}::{server+1}/127
         MTU = {mtu}
         PrivateKey = {privateKey}'''
         if clientIP == True:
