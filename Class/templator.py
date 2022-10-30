@@ -50,7 +50,7 @@ class Templator:
         Table = off
         [Peer]
         PublicKey = {publicKey}
-        AllowedIPs = 0.0.0.0/0'''
+        AllowedIPs = 0.0.0.0/0, ::0/0'''
         return template
 
     def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
@@ -71,7 +71,7 @@ class Templator:
         Table = off
         [Peer]
         PublicKey = {publicKey}
-        AllowedIPs = 0.0.0.0/0
+        AllowedIPs = 0.0.0.0/0, ::0/0
         Endpoint = {ip}:{port}'''
         if clientIP == True: template += '\nPersistentKeepalive = 20'
         return template
