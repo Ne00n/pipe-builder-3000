@@ -11,10 +11,13 @@ class Templator:
                     return len(clients)
         return clients
 
-    def genVXLAN(self,servers,targets):
+    def genVXLAN(self,servers,targets,v6=False):
         template = ""
         for node,data in servers.items():
-            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.{data["id"]}.1;'
+            if v6:
+                template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]}v6 dst fc00:0:0:{data["id"]}::1;'
+            else:
+                template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.{data["id"]}.1;'
         clients = self.getUniqueClients(targets['servers'])
         count = 1
         for client in clients:
@@ -23,7 +26,6 @@ class Templator:
         return template
 
     def genServer(self,targets,ip,data,server,port,privateKey,publicKey,v6only=False):
-        randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe99:{data["id"]}::{server}/127
@@ -40,11 +42,20 @@ class Templator:
                     template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                 else:
                     template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+            #vxlan v4
+            randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip link set dev vxlan{targets["vxlanID"]} address {randomMac};'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{data["id"]}/24 dev vxlan{targets["vxlanID"]};'
             template += self.genVXLAN(targets['servers'],targets)
-            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr del fc00:0:0:{data["id"]}::1/64 dev lo; ip link delete vxlan{targets["vxlanID"]};'
+            #vxlan v6
+            randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
+            template += f'ip -6 link add vxlan{targets["vxlanID"]}v6 type vxlan id {targets["vxlanID"]+1} dstport {targets["vxlanID"]+1}789 local fc00:0:0:{data["id"]}::1; ip -6 link set vxlan{targets["vxlanID"]}v6 up;'
+            template += f'ip -6 link set dev vxlan{targets["vxlanID"]}v6 address {randomMac};'
+            template += f'ip -6 addr add fc00:0:5:{targets["vxlanSub"]}::{data["id"]}/64 dev vxlan{targets["vxlanID"]}v6;'
+            template += self.genVXLAN(targets['servers'],targets,True)
+            #postDown
+            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr del fc00:0:0:{data["id"]}::1/64 dev lo; ip link delete vxlan{targets["vxlanID"]}; ip link delete vxlan{targets["vxlanID"]}v6;'
         template += f'''
         SaveConfig = false
         Table = off
