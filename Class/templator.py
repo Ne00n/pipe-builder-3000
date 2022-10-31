@@ -45,6 +45,7 @@ class Templator:
                     template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                 else:
                     template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+                    template += "ip6tables -t nat -A POSTROUTING -o $(ip -6 route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
             #vxlan v4
             randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
