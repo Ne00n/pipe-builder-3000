@@ -21,7 +21,10 @@ class Templator:
         clients = self.getUniqueClients(targets['servers'])
         count = 1
         for client in clients:
-            template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.250.{count};'
+            if v6:
+                template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]}v6 dst fc00:0:250:{count}::1;'
+            else:
+                template += f'bridge fdb append 00:00:00:00:00:00 dev vxlan{targets["vxlanID"]} dst {targets["prefixSub"]}.250.{count};'
             count += 1
         return template
 
