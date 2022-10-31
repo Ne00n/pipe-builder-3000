@@ -399,10 +399,11 @@ class Pipe(Tools):
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
+                v6 = True if self.resolve[server]['v6'] and self.resolve[target]['v6'] else False
                 if answer != "y":
-                    self.execute(clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,serverIP,basePort,target,server,privateServer,publicServer,v6,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server,privateServer,publicServer,v6,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
