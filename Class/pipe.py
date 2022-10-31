@@ -39,7 +39,7 @@ class Pipe(Tools):
     def checkHost(self,host,serverData):
         v4 = self.resolveHostname(host).strip()
         v6 = self.resolveHostname(f"{host}v6").strip()
-        suffix = "v6" if v6 and v4 is False else ""
+        suffix = "v6" if v6 and not v4 else ""
         hostData = {"v4":v4,"v6":v6,"suffix":suffix}
         if not v4 and not v6: exit(f"Could not resolve {host}")
         if v4:
