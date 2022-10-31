@@ -28,6 +28,9 @@ class Templator:
             count += 1
         return template
 
+    def isContainer(self,type):
+        return type in ["container","boringtun","ovz","lxc"]
+
     def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
@@ -36,18 +39,16 @@ class Templator:
         ListenPort = {port}
         PrivateKey = {privateKey}'''
         if port == data['basePort']:
-            if data['type'] != "boringtun" and data['type'] != "container":
-                template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
-            else:
-                template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
+            template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
+            if not self.isContainer(data['type']): template += f' echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control;'
             if port == data['basePort']:
                 if resolve['v4']:
-                    if data['type'] == "boringtun" or data['type'] == "container":
+                    if self.isContainer(data['type']):
                         template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                     else:
                         template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
                 if resolve['v6']:
-                    if data['type'] == "boringtun" or data['type'] == "container":
+                    if self.isContainer(data['type']):
                         template += "ip6tables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
                     else:
                         template += "ip6tables -t nat -A POSTROUTING -o $(ip -6 route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
