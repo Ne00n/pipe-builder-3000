@@ -76,10 +76,16 @@ class Templator:
         if clientIP == True:
             vxlanIP = 255 - self.getUniqueClients(targets['servers'],client,True)
             template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip addr add fc00:0:250:{len(clients)}::1/64 dev lo;'
+            #vxlan v4
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.250.{len(clients)}; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{vxlanIP}/24 dev vxlan{targets["vxlanID"]};'
             template += self.genVXLAN(targets['servers'],targets)
-            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip addr del fc00:0:250:{len(clients)}::1/64 dev lo; ip link delete vxlan{targets["vxlanID"]};'
+            #vxlan v6
+            template += f'ip -6 link add vxlan{targets["vxlanID"]}v6 type vxlan id {targets["vxlanID"]+1} dstport {targets["vxlanID"]+1}789 local fc00:0:250:{len(clients)}::1; ip -6 link set vxlan{targets["vxlanID"]}v6 up;'
+            template += f'ip -6 addr add fc00:0:{targets["vxlanSub"]}::{vxlanIP}/64 dev vxlan{targets["vxlanID"]}v6;'
+            template += self.genVXLAN(targets['servers'],targets,True)
+            #postDown
+            template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip addr del fc00:0:250:{len(clients)}::1/64 dev lo; ip link delete vxlan{targets["vxlanID"]}; ip link delete vxlan{targets["vxlanID"]}v6;'
         template += f'''
         SaveConfig = false
         Table = off
