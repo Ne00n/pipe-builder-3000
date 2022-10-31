@@ -28,7 +28,7 @@ class Templator:
             count += 1
         return template
 
-    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,v6only=False):
+    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe99:{data["id"]}::{server}/127
@@ -40,12 +40,17 @@ class Templator:
                 template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
             else:
                 template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
-            if v6only is False and port == data['basePort']:
-                if data['type'] == "boringtun" or data['type'] == "container":
-                    template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
-                else:
-                    template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
-                    template += "ip6tables -t nat -A POSTROUTING -o $(ip -6 route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+            if port == data['basePort']:
+                if resolve['v4']:
+                    if data['type'] == "boringtun" or data['type'] == "container":
+                        template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
+                    else:
+                        template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+                if resolve['v6']:
+                    if data['type'] == "boringtun" or data['type'] == "container":
+                        template += "ip6tables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
+                    else:
+                        template += "ip6tables -t nat -A POSTROUTING -o $(ip -6 route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
             #vxlan v4
             randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'

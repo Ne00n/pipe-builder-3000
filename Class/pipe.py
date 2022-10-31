@@ -239,7 +239,7 @@ class Pipe(Tools):
         #Prepare IP
         ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets,ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),bool(self.resolve[server]['suffix']))
+        serverConfig = T.genServer(self.targets,ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.resolve[server])
         #Type Check
         if self.targets['servers'][server]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
