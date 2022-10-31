@@ -31,6 +31,15 @@ class Templator:
     def isContainer(self,type):
         return type in ["container","boringtun","ovz","lxc"]
 
+    def getPostRouting(self,type,proto):
+        iptables = ""
+        if type == "ovz":
+            iptables = "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $3}' | tail -1) -j MASQUERADE;"
+        else:
+            iptables = "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+        if proto == "v6": iptables = iptables.replace('iptables', 'ip6tables').replace('(ip','(ip -6')
+        return iptables
+
     def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
@@ -42,16 +51,8 @@ class Templator:
             template += f'\nPostUp =  echo 1 > /proc/sys/net/ipv4/ip_forward; echo 1 > /proc/sys/net/ipv6/conf/all/forwarding; echo 0 > /proc/sys/net/ipv4/conf/all/rp_filter; echo 0 > /proc/sys/net/ipv4/conf/default/rp_filter; ip addr add {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr add fc00:0:0:{data["id"]}::1/64 dev lo;'
             if not self.isContainer(data['type']): template += f' echo "fq" > /proc/sys/net/core/default_qdisc; echo "bbr" > /proc/sys/net/ipv4/tcp_congestion_control;'
             if port == data['basePort']:
-                if resolve['v4']:
-                    if self.isContainer(data['type']):
-                        template += "iptables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
-                    else:
-                        template += "iptables -t nat -A POSTROUTING -o $(ip route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
-                if resolve['v6']:
-                    if self.isContainer(data['type']):
-                        template += "ip6tables -t nat -A POSTROUTING -o venet0 -j MASQUERADE;"
-                    else:
-                        template += "ip6tables -t nat -A POSTROUTING -o $(ip -6 route show default | awk '/default/ {print $5}' | tail -1) -j MASQUERADE;"
+                if resolve['v4']: template += self.getPostRouting(data['type'],"v4")
+                if resolve['v6']: template += self.getPostRouting(data['type'],"v6")
             #vxlan v4
             randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
