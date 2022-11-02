@@ -39,7 +39,7 @@ class Pipe(Tools):
     def checkHost(self,host,serverData):
         v4 = self.resolveHostname(host).strip()
         v6 = self.resolveHostname(f"{host}v6").strip()
-        suffix = "v6" if v6 and v4 is False else ""
+        suffix = "v6" if v6 and not v4 else ""
         hostData = {"v4":v4,"v6":v6,"suffix":suffix}
         if not v4 and not v6: exit(f"Could not resolve {host}")
         if v4:
@@ -239,7 +239,7 @@ class Pipe(Tools):
         #Prepare IP
         ip = f"[{self.resolve[server]['v6']}]" if ipv6 else self.resolve[server]['v4']
         #Generate Server config
-        serverConfig = T.genServer(self.targets,ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),bool(self.resolve[server]['suffix']))
+        serverConfig = T.genServer(self.targets,ip.rstrip(),self.targets['servers'][server],serverIP,basePort,privateServer.rstrip(),publicClient.rstrip(),self.resolve[server])
         #Type Check
         if self.targets['servers'][server]['type'] == 'boringtun':
             serviceConfig = T.genBoringtun()
@@ -399,10 +399,11 @@ class Pipe(Tools):
             #Check if target has any wg configuration
             if execute is False:
                 print("Adding dummy for",server+suffix,"so vxlan works fine")
+                v6 = True if self.resolve[server]['v6'] and self.resolve[target]['v6'] else False
                 if answer != "y":
-                    self.execute(clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True)
+                    self.execute(clients,serverIP,basePort,target,server,privateServer,publicServer,v6,True)
                 else:
-                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server+suffix,privateServer,publicServer,False,True])))
+                    threads.append(Thread(target=self.execute, args=([clients,serverIP,basePort,target,server,privateServer,publicServer,v6,True])))
             if answer == "y":
                 if rate == 0.2 and len(threads) > 4:
                     rate = len(threads) * 0.05
