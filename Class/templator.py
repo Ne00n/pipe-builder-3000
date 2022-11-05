@@ -5,7 +5,7 @@ class Templator:
         clients = []
         for node,data in targets.items():
             for client in data['Targets']:
-                if client not in clients and client != "*":
+                if client not in clients and client != "*" and client != "geo":
                     clients.append(client)
                 if client == target and count == True:
                     return len(clients)
