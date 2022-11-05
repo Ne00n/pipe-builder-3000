@@ -2,10 +2,11 @@ import random
 
 class Templator:
     def getUniqueClients(self,targets,target="",count=False):
+        ignore = ["*","geo"]
         clients = []
         for node,data in targets.items():
             for client in data['Targets']:
-                if client not in clients and client != "*" and client != "geo":
+                if client not in clients and client not in ignore:
                     clients.append(client)
                 if client == target and count == True:
                     return len(clients)
