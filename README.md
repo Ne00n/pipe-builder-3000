@@ -5,7 +5,7 @@ Make sure the Hostnames are present in /etc/hosts<br />
 Wireguard needs to be already installed on all servers<br />
 
 Its recommended to run this on clean servers.<br />
-By default 10.0.x.x/16 is used. Can be changed to 172.16.0.0/12 or 192.168.0.0/16.<br />
+By default 10.0.x.x/16 / fc10::/16 is used. Can be changed to 172.16.0.0/12 or 192.168.0.0/16.<br />
 10.0.id.1 Node /30<br />
 10.0.id.4-255 peers /31<br />
 10.0.250.1-255 clients /32<br />
