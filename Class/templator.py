@@ -44,7 +44,7 @@ class Templator:
     def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
-        Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe99:{data["id"]}::{server}/127
+        Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe82:{data["id"]}::{server}/127
         MTU = {mtu}
         ListenPort = {port}
         PrivateKey = {privateKey}'''
@@ -79,7 +79,7 @@ class Templator:
     def genClient(self,targets,ip,subnet,server,port,privateKey,publicKey,clientIP,clients,client):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
-        Address = {targets["prefixSub"]}.{subnet}.{server+1}/31, fe99:{subnet}::{server+1}/127
+        Address = {targets["prefixSub"]}.{subnet}.{server+1}/31, fe82:{subnet}::{server+1}/127
         MTU = {mtu}
         PrivateKey = {privateKey}'''
         if clientIP == True:
