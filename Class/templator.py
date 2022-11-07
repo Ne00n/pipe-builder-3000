@@ -64,7 +64,7 @@ class Templator:
             randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
             template += f'ip -6 link add vxlan{targets["vxlanID"]}v6 type vxlan id {targets["vxlanID"]+1} dstport {targets["vxlanID"]+1}789 local fc10:0:{data["id"]}::1; ip -6 link set vxlan{targets["vxlanID"]}v6 up;'
             template += f'ip -6 link set dev vxlan{targets["vxlanID"]}v6 address {randomMac};'
-            template += f'ip -6 addr add fc10:{targets["vxlanSub"]}::{data["id"]}/32 dev vxlan{targets["vxlanID"]}v6;'
+            template += f'ip -6 addr add fc10:{targets["vxlanSub"]}::{data["id"]}/64 dev vxlan{targets["vxlanID"]}v6;'
             template += self.genVXLAN(targets['servers'],targets,True)
             #postDown
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.{data["id"]}.1/30 dev lo; ip addr del fc10:0:{data["id"]}::1/48 dev lo; ip link delete vxlan{targets["vxlanID"]}; ip link delete vxlan{targets["vxlanID"]}v6;'
@@ -91,7 +91,7 @@ class Templator:
             template += self.genVXLAN(targets['servers'],targets)
             #vxlan v6
             template += f'ip -6 link add vxlan{targets["vxlanID"]}v6 type vxlan id {targets["vxlanID"]+1} dstport {targets["vxlanID"]+1}789 local fc10:250:{len(clients)}::1; ip -6 link set vxlan{targets["vxlanID"]}v6 up;'
-            template += f'ip -6 addr add fc10:{targets["vxlanSub"]}::{vxlanIP}/32 dev vxlan{targets["vxlanID"]}v6;'
+            template += f'ip -6 addr add fc10:{targets["vxlanSub"]}::{vxlanIP}/64 dev vxlan{targets["vxlanID"]}v6;'
             template += self.genVXLAN(targets['servers'],targets,True)
             #postDown
             template += f'\nPostDown = ip addr del {targets["prefixSub"]}.250.{len(clients)}/32 dev lo; ip addr del fc10:250:{len(clients)}::1/48 dev lo; ip link delete vxlan{targets["vxlanID"]}; ip link delete vxlan{targets["vxlanID"]}v6;'
