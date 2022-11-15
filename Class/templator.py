@@ -41,7 +41,7 @@ class Templator:
         if proto == "v6": iptables = iptables.replace('iptables', 'ip6tables').replace('(ip','(ip -6')
         return iptables
 
-    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve):
+    def genServer(self,targets,ip,data,server,port,privateKey,publicKey,resolve,macs):
         mtu = 1412 if "[" in ip else 1420
         template = f'''[Interface]
         Address = {targets["prefixSub"]}.{data["id"]}.{server}/31, fe82:{data["id"]}::{server}/127
@@ -55,13 +55,13 @@ class Templator:
                 if resolve['v4']: template += self.getPostRouting(data['type'],"v4")
                 if resolve['v6']: template += self.getPostRouting(data['type'],"v6")
             #vxlan v4
-            randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
+            randomMac = macs[(int(self.getIndex(targets['servers'],data['id'])) *2) -2]
             template += f'ip link add vxlan{targets["vxlanID"]} type vxlan id {targets["vxlanID"]} dstport {targets["vxlanID"]}789 local {targets["prefixSub"]}.{data["id"]}.1; ip link set vxlan{targets["vxlanID"]} up;'
             template += f'ip link set dev vxlan{targets["vxlanID"]} address {randomMac};'
             template += f'ip addr add {targets["prefixSub"]}.{targets["vxlanSub"]}.{data["id"]}/24 dev vxlan{targets["vxlanID"]};'
             template += self.genVXLAN(targets['servers'],targets)
             #vxlan v6
-            randomMac = "52:54:00:%02x:%02x:%02x" % (random.randint(0, 255),random.randint(0, 255),random.randint(0, 255),)
+            randomMac = macs[(int(self.getIndex(targets['servers'],data['id'])) *2) -1]
             template += f'ip -6 link add vxlan{targets["vxlanID"]}v6 type vxlan id {targets["vxlanID"]+1} dstport {targets["vxlanID"]+1}789 local fc10:0:{data["id"]}::1; ip -6 link set vxlan{targets["vxlanID"]}v6 up;'
             template += f'ip -6 link set dev vxlan{targets["vxlanID"]}v6 address {randomMac};'
             template += f'ip -6 addr add fc10:{targets["vxlanSub"]}::{data["id"]}/64 dev vxlan{targets["vxlanID"]}v6;'
@@ -111,3 +111,7 @@ Environment=WG_QUICK_USERSPACE_IMPLEMENTATION=boringtun
 Environment=WG_SUDO=1
         '''
         return template
+
+    def getIndex(self,servers,serverID):
+        for index, (server, details) in enumerate(servers.items()):
+            if details['id'] == serverID: return index
