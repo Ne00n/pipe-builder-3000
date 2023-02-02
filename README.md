@@ -1,4 +1,6 @@
 # pipe-builder-3000
+## Not longer updated
+Use wg-mesh instead.<br
 
 Sets up multiple point to point wireguard connections<br />
 Make sure the Hostnames are present in /etc/hosts<br />
